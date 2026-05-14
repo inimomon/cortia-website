@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 // import Navbar from '../components/Navbar';
 import Navbar from '../ui/Navbar';
 import { File } from 'lucide-react';
+import Footer from '../ui/Footer';
 
 const API = 'http://localhost:8123/api/audit';
 const REQUIRED_COLUMNS = [
@@ -773,6 +774,9 @@ export default function AuditOldPage() {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
