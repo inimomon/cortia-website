@@ -38,9 +38,9 @@ const daerahData = [
 ];
 
 const statusConfig = {
-  KRITIS: { bg: 'bg-red-100', text: 'text-red-700', icon: '⚠', border: 'border-red-400' },
-  ANOMALI: { bg: 'bg-orange-100', text: 'text-orange-700', icon: '⚠', border: 'border-orange-400' },
-  STABIL: { bg: 'bg-teal-100', text: 'text-teal-700', icon: '✔', border: 'border-teal-400' },
+  KRITIS: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-400' },
+  ANOMALI: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-400' },
+  STABIL: { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-400' },
 };
 
 const skorColor = (s) => {
@@ -76,7 +76,6 @@ export default function ExplorePage() {
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-8">
           <div className="flex-1 min-w-64 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
             <input
               type="text"
               value={search}
@@ -104,7 +103,7 @@ export default function ExplorePage() {
             ))}
           </select>
           <button className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-white flex items-center gap-2 hover:bg-gray-50">
-            ⚙ Filter
+            Filter
           </button>
         </div>
 
@@ -117,7 +116,7 @@ export default function ExplorePage() {
                 <div className="flex items-start justify-between mb-1">
                   <h3 className="font-bold text-gray-900">{d.name}</h3>
                   <span className={`text-xs font-semibold px-2 py-1 rounded ${cfg.bg} ${cfg.text} flex items-center gap-1`}>
-                    {cfg.icon} {d.status}
+                    {d.status}
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 mb-3">ID: {d.id}</p>
@@ -142,7 +141,7 @@ export default function ExplorePage() {
                     <p className={`font-bold text-sm ${skorColor(d.anomaliSkor)}`}>{d.anomaliSkor}/10</p>
                   </div>
                   <button
-                    onClick={() => navigate('/detail')}
+                    onClick={() => navigate(`/detail-prov/${d.id}`)}
                     className="text-sm text-gray-700 font-medium hover:text-gray-900 flex items-center gap-1"
                   >
                     Detail →

@@ -2,6 +2,7 @@ import React from "react";
 
 import LogoList from "./LogoList";
 import { Mail, Phone } from "lucide-react";
+import CortiaLogo from "../../assets/CortiaLogo.png";
 
 const Footer = () => {
   return (
@@ -15,10 +16,8 @@ const Footer = () => {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-4">
               {/* Logo */}
-              <div className="w-12 h-12 rounded-full border-2 border-[#0E2A47] flex items-center justify-center">
-                <span className="text-[#0E2A47] font-bold text-xl">
-                  C
-                </span>
+              <div className="w-12 h-12 flex items-center justify-center">
+                <img className="h-full w-full" src={CortiaLogo} alt="" />
               </div>
 
               <h2 className="text-[#0E2A47] font-bold text-2xl">
