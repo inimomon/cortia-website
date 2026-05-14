@@ -3,8 +3,10 @@ const xlsx = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
 
 const AuditHistory = require('../model/AuditHistory');
+const Transaction = require('../model/Transaction');
 
 const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -218,6 +220,7 @@ function summarisePredictionResults(results) {
   );
 }
 
+//untuk upload file input dari user bukan input kasar
 const uploadFile = (req, res) => {
   upload(req, res, async (err) => {
     if (err instanceof multer.MulterError) return res.status(400).json({ success: false, message: err.message });
@@ -260,7 +263,195 @@ const uploadFile = (req, res) => {
   });
 };
 
+//contoh dummy untuk user (ttemplate contoh dalam xlsx)
+const downloadTemplate = (_req, res) => {
+  const workbook = xlsx.utils.book_new();
+  const sampleData = [
+    {
+      tender_title: 'Jasa Eo Pemilihan Abang Dan None Jakarta Selatan Tahun 2023',
+      tender_minvalue: 1252306428.2,
+      award_value: 1145627700.0,
+      award_date: '2023-04-14',
+      days_to_award: 11,
+      mainprocurementcategory: 'Services',
+      award_title: 'Jasa Eo Pemilihan Abang Dan None Jakarta Selatan Tahun 2023',
+      award_supplier: 'Pt. Ishana Abyakta Indonesia',
+      nama_daerah: 'dki_jakarta_127',
+    },
+    {
+      tender_title: 'Pengadaan Perangkat Jaringan Data Pemerintah Kota',
+      tender_minvalue: 875000000.0,
+      award_value: 842500000.0,
+      award_date: '2023-05-02',
+      days_to_award: 19,
+      mainprocurementcategory: 'Goods',
+      award_title: 'Kontrak Pengadaan Perangkat Jaringan Data Pemerintah Kota',
+      award_supplier: 'PT Nusantara Teknologi Infrastruktur',
+      nama_daerah: 'dki_jakarta_127',
+    },
+  ];
+
+  const worksheet = xlsx.utils.json_to_sheet(sampleData);
+  worksheet['!cols'] = [
+    { wch: 45 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
+    { wch: 24 }, { wch: 45 }, { wch: 30 }, { wch: 18 },
+  ];
+  xlsx.utils.book_append_sheet(workbook, worksheet, 'Template');
+  const buffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+  res.setHeader('Content-Disposition', 'attachment; filename="audit_old_template.xlsx"');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+};
+
+// clean data from user input, panggil fastapi 
+const analyzeAudit = async (req, res) => {
+  const { auditId } = req.body;
+  if (!auditId) return res.status(400).json({ success: false, message: 'auditId is required' });
+
+  try {
+    const audit = await AuditHistory.findByPk(auditId);
+    if (!audit || audit.flow_type !== FLOW_TYPE) {
+      return res.status(404).json({ success: false, message: 'Audit not found' });
+    }
+    if (audit.status === 'processing') {
+      return res.status(409).json({ success: false, message: 'Analysis already in progress' });
+    }
+    if (audit.status === 'completed') {
+      return res.status(409).json({ success: false, message: 'This file has already been analyzed' });
+    }
+
+    await AuditHistory.update({ status: 'processing' }, { where: { id: auditId } });
+
+    const ext = ['.xlsx', '.csv'].find((candidate) =>
+      fs.existsSync(path.join(uploadDir, `audit_old_${auditId}${candidate}`))
+    );
+    if (!ext) {
+      await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } });
+      return res.status(404).json({ success: false, message: 'Uploaded file not found on server' });
+    }
+
+    const rows = parseFile(path.join(uploadDir, `audit_old_${auditId}${ext}`));
+    const validation = validateSchema(rows);
+    if (!validation.valid) {
+      await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } });
+      return res.status(422).json({ success: false, message: validation.message });
+    }
+
+    const namaDaerah = resolveNamaDaerah(rows);
+    const sanitizedRows = sanitizeRows(rows, namaDaerah);
+    const predictionResponse = await requestFastApiPrediction(namaDaerah, sanitizedRows, auditId);
+    if (!Array.isArray(predictionResponse.results)) {
+      throw new Error('FastAPI response does not contain a results array');
+    }
+
+    const summary = summarisePredictionResults(predictionResponse.results);
+
+    await AuditHistory.update(
+      {
+        status: 'completed',
+        total_rows: summary.total_processed,
+        high_risk: summary.high_risk,
+        medium_risk: summary.medium_risk,
+        low_risk: summary.low_risk,
+      },
+      { where: { id: auditId } }
+    );
+
+    return res.json({
+      success: true,
+      status: predictionResponse.status || 'success',
+      total_processed: summary.total_processed,
+      results: predictionResponse.results,
+      summary,
+    });
+  } catch (error) {
+    console.error('Analyze old error:', error);
+    await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } }).catch(() => {});
+    return res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+
+const getAudits = async (req, res) => {
+  try {
+    const { q, risk, page = 1, limit = 10 } = req.query;
+    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const where = { flow_type: FLOW_TYPE };
+    const txWhere = {};
+
+    if (q) {
+      txWhere[Op.or] = [
+        { tender_title: { [Op.like]: `%${q}%` } },
+        { award_title: { [Op.like]: `%${q}%` } },
+        { award_supplier: { [Op.like]: `%${q}%` } },
+        { nama_daerah: { [Op.like]: `%${q}%` } },
+      ];
+    }
+    if (risk && ['low', 'medium', 'high'].includes(String(risk).toLowerCase())) {
+      txWhere.risk_level = String(risk).toLowerCase();
+    }
+
+    if (Object.keys(txWhere).length > 0) {
+      const matchingTransactions = await Transaction.findAll({
+        where: txWhere,
+        attributes: ['audit_id'],
+        group: ['audit_id'],
+      });
+      const auditIds = matchingTransactions.map((item) => item.audit_id);
+      if (auditIds.length === 0) {
+        return res.json({ success: true, data: [], total: 0, page: parseInt(page, 10) });
+      }
+      where.id = { [Op.in]: auditIds };
+    }
+
+    const { count, rows } = await AuditHistory.findAndCountAll({
+      where,
+      order: [['id', 'DESC']],
+      limit: parseInt(limit, 10),
+      offset,
+    });
+
+    return res.json({ success: true, data: rows, total: count, page: parseInt(page, 10) });
+  } catch (error) {
+    console.error('List old error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getAuditDetail = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const audit = await AuditHistory.findByPk(id);
+    if (!audit || audit.flow_type !== FLOW_TYPE) {
+      return res.status(404).json({ success: false, message: 'Audit not found' });
+    }
+    const transactions = await Transaction.findAll({
+      where: { audit_id: id },
+      order: [['score', 'DESC']],
+    });
+    return res.json({ success: true, audit, transactions });
+  } catch (error) {
+    console.error('Detail old error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getTransactionDetail = async (req, res) => {
+  const { auditId, txId } = req.params;
+  try {
+    const transaction = await Transaction.findOne({ where: { audit_id: auditId, id: txId } });
+    if (!transaction) return res.status(404).json({ success: false, message: 'Transaction not found' });
+    return res.json({ success: true, transaction });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
-    uploadFile
+  uploadFile,
+  downloadTemplate,
+  analyzeAudit,
+  getAudits,
+  getAuditDetail,
+  getTransactionDetail,
 };

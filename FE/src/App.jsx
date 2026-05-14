@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import Home from './components/pages/Home';
-import LoginPage from './components/pages/LoginPage';
-import RegisterPage from './components/pages/RegisterPage';
+import Home from './pages/Home';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import AuditPage from './pages/AuditPage';
+import AuditDetailPage from './pages/AuditDetailPage';
+import FeaturePage from './pages/FeaturePage';
 
 function App() {
   return (
@@ -11,6 +14,9 @@ function App() {
         <Route path='/' element={<Home />} />
         <Route path='/login' element={<LoginPage />} />
         <Route path='/register' element={<RegisterPage />} />
+        <Route path='/feature' element={<FeaturePage />} />
+        <Route path='/audit' element={<AuditPage /> } />
+        <Route path="/audit/:id" element={<AuditDetailPage />} />
       </Routes>
     </BrowserRouter>
   )

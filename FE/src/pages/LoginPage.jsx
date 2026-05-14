@@ -4,7 +4,7 @@ import { Mail, Lock, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-import Navbar from "../ui/Navbar";
+import Navbar from "../components/ui/Navbar";
 
 const LoginPage = () => {
   const navigate = useNavigate();
