@@ -11,6 +11,7 @@ const sequelize = new Sequelize(
     dialect: "mysql",
   },
 );
+
 const connectDB = async () => {
   try {
     await sequelize.authenticate();

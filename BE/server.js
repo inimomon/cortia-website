@@ -1,17 +1,21 @@
 // import package
 require("dotenv").config();
 const express = require("express");
-const { connectDB, sequelize } = require("./src/config/db");
+const { connectDB } = require("./src/config/db");
+
 // import model
-const predictionModel = require("./src/model/Prediction");
-const authModel = require("./src/model/User");
-const auditModel = require("./src/model/AuditHistory");
+require("./src/model/Prediction");
+require("./src/model/User");
+require("./src/model/AuditHistory");
+
 // import router
-const predictionRouter = require("./src/controller/predictionController");
-const authRouter = require("./src/controller/authController");
+const predictionRouter = require("../BE/src/router/predictionRouter");
+const authRouter = require("./src/router/authRouter");
 const auditRouter = require("./src/router/auditRouter");
 
 const app = express();
+
+app.use(express.json());
 
 // use router
 app.use("/api/v1/prediction", predictionRouter);
@@ -21,7 +25,9 @@ app.use("/api/audit", auditRouter);
 app.get("/", (req, res) => {
   res.json("hello");
 });
+
 connectDB();
+
 app.listen(process.env.PORT, () => {
-  console.log(`runing in http://localhost:${process.env.PORT}`);
+  console.log(`running in http://localhost:${process.env.PORT}`);
 });

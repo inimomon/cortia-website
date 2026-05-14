@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
+const { sequelize } = require("../config/db");
 
 const User = sequelize.define(
   "User",
@@ -21,7 +21,7 @@ const User = sequelize.define(
     },
 
     no_hp: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
     },
 
@@ -37,7 +37,7 @@ const User = sequelize.define(
     },
   },
   {
-    tableName: "user",
+    tableName: "users",
     timestamps: false,
   },
 );
