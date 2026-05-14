@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-
-import { User, Calendar, Phone, Mail, Lock, ArrowRight } from "lucide-react";
-
+import { User, Calendar, Phone, Mail, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
+import Navbar from "../components/ui/Navbar";
+import Footer from "../components/ui/Footer";
 import axios from "axios";
 
 const RegisterPage = () => {
@@ -19,17 +18,30 @@ const RegisterPage = () => {
     email: "",
     password: "",
   });
+
+  const [errors, setErrors] = useState({});
+
   const validateForm = () => {
     let newErrors = {};
 
-    // validasi nik
+    // Validasi NIK
     if (!/^\d{16}$/.test(formData.nik)) {
       newErrors.nik = "NIK harus 16 digit angka";
     }
 
-    // validasi no hp
+    // Validasi nomor HP
     if (!/^\d{10,15}$/.test(formData.no_hp)) {
       newErrors.no_hp = "Nomor HP harus 10-15 digit angka";
+    }
+
+    // Validasi email
+    if (!formData.email.includes("@")) {
+      newErrors.email = "Format email tidak valid";
+    }
+
+    // Validasi password
+    if (formData.password.length < 6) {
+      newErrors.password = "Password minimal 6 karakter";
     }
 
     setErrors(newErrors);
@@ -42,20 +54,29 @@ const RegisterPage = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    // Hapus error saat user mengetik
+    setErrors({
+      ...errors,
+      [e.target.name]: "",
+    });
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
     if (!validateForm()) {
-     return;
+      return;
     }
+
     try {
       setLoading(true);
 
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8001/api/v1/auth/register",
-        formData,
+        formData
       );
+
       navigate("/login");
     } catch (error) {
       console.log(error);
@@ -67,181 +88,218 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans text-slate-900">
-      <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        <div className="p-10">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="font-bold text-xl tracking-tight uppercase">
-              CORTIA
-            </span>
-          </div>
+    <>
+      <Navbar />
 
-          <h2 className="text-2xl font-bold">Pendaftaran Akun</h2>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans text-slate-900">
+        <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+          <div className="p-10">
+            
+            {/* Header */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <span className="font-bold text-xl tracking-tight uppercase">
+                CORTIA
+              </span>
+            </div>
 
-          <p className="text-slate-500 mt-1 mb-8">
-            Lengkapi data di bawah ini sesuai dengan identitas resmi Anda.
-          </p>
+            <h2 className="text-2xl font-bold">
+              Pendaftaran Akun
+            </h2>
 
-          <form onSubmit={handleRegister} className="space-y-5">
-            {/* NIK */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                NIK
-              </label>
+            <p className="text-slate-500 mt-1 mb-8">
+              Lengkapi data di bawah ini sesuai dengan identitas resmi Anda.
+            </p>
 
-              <div className="relative">
+            {/* Form */}
+            <form onSubmit={handleRegister} className="space-y-5">
+
+              {/* NIK */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  NIK
+                </label>
+
                 <input
-                  type="number"
+                  type="text"
                   name="nik"
                   value={formData.nik}
                   onChange={handleChange}
                   placeholder="327xxxxxxxxxxxxx"
-                  className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
                 />
+
+                {errors.nik && (
+                  <p className="text-red-500 text-xs">
+                    {errors.nik}
+                  </p>
+                )}
               </div>
-            </div>
 
-            {/* Nama */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Nama Lengkap
-              </label>
-
-              <div className="relative">
-                <User
-                  className="absolute left-3 top-3 text-slate-400"
-                  size={16}
-                />
-
-                <input
-                  type="text"
-                  name="nama_panjang"
-                  value={formData.nama_panjang}
-                  onChange={handleChange}
-                  placeholder="Masukkan nama sesuai KTP"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Tanggal Lahir */}
+              {/* Nama */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Tanggal Lahir
+                  Nama Lengkap
                 </label>
 
                 <div className="relative">
-                  <Calendar
-                    className="absolute left-3 top-3 text-slate-400"
-                    size={16}
-                  />
-
-                  <input
-                    type="date"
-                    name="tgl_lahir"
-                    value={formData.tgl_lahir}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* No HP */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Nomor HP
-                </label>
-
-                <div className="relative">
-                  <Phone
+                  <User
                     className="absolute left-3 top-3 text-slate-400"
                     size={16}
                   />
 
                   <input
                     type="text"
-                    name="no_hp"
-                    value={formData.no_hp}
+                    name="nama_panjang"
+                    value={formData.nama_panjang}
                     onChange={handleChange}
-                    placeholder="0812xxxxxxxx"
+                    placeholder="Masukkan nama sesuai KTP"
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Email */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Alamat Email
-              </label>
+              {/* Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              <div className="relative">
-                <Mail
-                  className="absolute left-3 top-3 text-slate-400"
-                  size={16}
-                />
+                {/* Tanggal Lahir */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Tanggal Lahir
+                  </label>
 
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
-                />
+                  <div className="relative">
+                    <Calendar
+                      className="absolute left-3 top-3 text-slate-400"
+                      size={16}
+                    />
+
+                    <input
+                      type="date"
+                      name="tgl_lahir"
+                      value={formData.tgl_lahir}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Nomor HP */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Nomor HP
+                  </label>
+
+                  <div className="relative">
+                    <Phone
+                      className="absolute left-3 top-3 text-slate-400"
+                      size={16}
+                    />
+
+                    <input
+                      type="text"
+                      name="no_hp"
+                      value={formData.no_hp}
+                      onChange={handleChange}
+                      placeholder="0812xxxxxxxx"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
+                    />
+                  </div>
+
+                  {errors.no_hp && (
+                    <p className="text-red-500 text-xs">
+                      {errors.no_hp}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Password */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Kata Sandi
-              </label>
+              {/* Email */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Alamat Email
+                </label>
 
-              <div className="relative">
-                <Lock
-                  className="absolute left-3 top-3 text-slate-400"
-                  size={16}
-                />
+                <div className="relative">
+                  <Mail
+                    className="absolute left-3 top-3 text-slate-400"
+                    size={16}
+                  />
 
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
-                />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="name@example.com"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
+                  />
+                </div>
+
+                {errors.email && (
+                  <p className="text-red-500 text-xs">
+                    {errors.email}
+                  </p>
+                )}
               </div>
-            </div>
 
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-slate-900 text-white py-3.5 rounded-lg font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2"
-              >
-                {loading ? "Loading..." : "Daftar Akun"}
+              {/* Password */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Kata Sandi
+                </label>
 
-                <ArrowRight size={18} />
-              </button>
-            </div>
+                <div className="relative">
+                  <Lock
+                    className="absolute left-3 top-3 text-slate-400"
+                    size={16}
+                  />
 
-            <p className="text-center text-sm text-slate-500 mt-4">
-              Sudah memiliki akun?{" "}
-              <Link
-                to="/login"
-                className="text-slate-900 font-bold hover:underline"
-              >
-                Masuk di sini
-              </Link>
-            </p>
-          </form>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-slate-900 transition"
+                  />
+                </div>
+
+                {errors.password && (
+                  <p className="text-red-500 text-xs">
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+
+              {/* Button */}
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-slate-900 text-white py-3.5 rounded-lg font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2"
+                >
+                  {loading ? "Loading..." : "Daftar Akun"}
+                </button>
+              </div>
+
+              {/* Login */}
+              <p className="text-center text-sm text-slate-500 mt-4">
+                Sudah memiliki akun?{" "}
+                <Link
+                  to="/login"
+                  className="text-slate-900 font-bold hover:underline"
+                >
+                  Masuk di sini
+                </Link>
+              </p>
+
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+
+      <Footer />
+    </>
   );
 };
 

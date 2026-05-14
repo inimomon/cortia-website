@@ -49,8 +49,7 @@ const RiskPublicMapSection = () => {
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-4xl font-bold text-gray-900 mb-2">
-          Peta Korupsi{" "}
-          <span className="text-gray-400 font-normal text-3xl">(?)</span>
+          Pemetaan Potensi Penyalahgunaan Anggaran
         </h2>
         <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
           Visualisasi persebaran risiko penyalahgunaan anggaran berdasarkan
@@ -150,9 +149,9 @@ const RiskPublicMapSection = () => {
               LIVE · Update 5 menit lalu
             </span>
           </div>
-          <button className="bg-gray-900 text-white text-xs font-semibold px-5 py-2 rounded-lg hover:bg-gray-700 transition">
-            Buka Portal
-          </button>
+          <a href="/dashboard" className="bg-gray-900 text-white text-xs font-semibold px-5 py-2 rounded-lg hover:bg-gray-700 transition">
+            Buka Dashboard
+          </a>
         </div>
       </div>
     </section>

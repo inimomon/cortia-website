@@ -1,37 +1,22 @@
-
-import React from 'react';
-import LogoList from './LogoList';
-import AiConnectHitam from "../../assets/AiConnectHitam.png";
-import DTETI from "../../assets/DTETI.png";
-import FINDIT from "../../assets/FINDIT.png";
-import opentender from "../../assets/opentender.png";
-import ugm from "../../assets/ugm.png";
+import React from "react";
+import LogoList from "./LogoList";
 
 const DynamicInjection = () => {
   return (
-    <div className='py-16 w-full flex flex-col items-center'>
-      <h1 className='text-xs text-gray-500 font-semibold'>DATA BERSUMBER & BERKOLABORASI DENGAN</h1>
-      <div className='mt-12 flex justify-center gap-2 md:gap-16'>
-        <LogoList />
-        <div className='h-24 flex justify-center gap-12'>
-          <div className='w-24 h-16 flex items-center justify-center'>
-            <img src={opentender} alt='' className='max-h-full max-w-full object-contain' />
-          </div>
-          <div className='w-24 h-16 flex items-center justify-center'>
-            <img src={AiConnectHitam} alt='' className='max-h-full max-w-full object-contain' />
-          </div>
-          <div className='w-24 h-16 flex items-center justify-center'>
-            <img src={ugm} alt='' className='max-h-full max-w-full object-contain' />
-          </div>
-          <div className='w-24 h-16 flex items-center justify-center'>
-            <img src={DTETI} alt='' className='max-h-full max-w-full object-contain' />
-          </div>
-          <div className='w-24 h-16 flex items-center justify-center'>
-            <img src={FINDIT} alt='' className='max-h-full max-w-full object-contain' />
-          </div>
+    <section className="w-full py-12 md:py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col items-center">
+        
+        {/* Title */}
+        <p className="text-[11px] md:text-xs tracking-[0.25em] font-semibold text-[#0B1C30]/50 text-center uppercase">
+          Data Bersumber & Berkolaborasi Dengan
+        </p>
+
+        {/* Logo Container */}
+        <div className="mt-8 md:mt-12 w-full">
+          <LogoList />
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

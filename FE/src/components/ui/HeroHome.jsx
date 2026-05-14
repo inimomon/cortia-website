@@ -1,32 +1,47 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
+import heroHome from "../../assets/homeHero.png";
 
 const HeroHome = () => {
   return (
-    <section className="pt-14">
-      {/* Background with soft gradients for a premium "clean" feel */}
-      <div className="relative bg-gradient-to-br from-gray-50 to-gray-200 min-h-[800px] flex items-center justify-center overflow-hidden">
-        
-        {/* Decorative radial blur */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_50%,rgba(200,210,230,0.5),transparent_70%)]" />
-        
-        <div className="relative z-10 text-center px-6 py-20">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-4 font-serif">
+    <section className="pt-8 md:pt-14">
+      <div className="relative min-h-[500px] md:min-h-[800px] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <img
+          src={heroHome}
+          alt="CORTIA Hero Background"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {/* Main Content */}
+        <div className="relative z-10 text-center px-4 md:px-6 py-12 md:py-20 max-w-3xl mx-auto">
+          {/* Heading */}
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#0B1C30] leading-tight mb-6 font-serif">
             Deteksi Korupsi
             <br />
-            <span className="italic font-light">Sebelum Terjadi</span>
+            <span className="italic text-[#3A3F44]">Sebelum Terjadi</span>
           </h1>
-          
-          <p className="text-gray-500 max-w-md mx-auto mb-8 text-sm leading-relaxed">
-            Platform pengawasan keuangan negara berbasis AI yang mendeteksi anomali fiskal secara real-time, transparan, dan dapat diaudit.
+
+          {/* Description */}
+          <p className="text-[#45464D] max-w-xl mx-auto mb-8 md:mb-10 text-sm md:text-base leading-relaxed">
+            CORTIA merupakan platform berbasis AI yang membantu mendeteksi
+            potensi penyimpangan dana negara untuk menciptakan transparansi dan
+            pengawasan yang lebih efektif.
           </p>
-          
-          <Link
-            to="/feature"
-            className="inline-block bg-gray-900 text-white text-sm font-medium px-8 py-3.5 rounded hover:bg-gray-700 transition-colors shadow-lg shadow-gray-200"
-          >
-            Pelajari lebih lanjut
-          </Link>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/feature"
+              className="inline-flex items-center justify-center bg-[#0B1C30] text-white text-sm font-semibold px-7 py-3.5 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg"
+            >
+              Pelajari lebih lanjut
+            </Link>
+
+            <button className="text-black text-sm font-medium hover:underline">
+              Lihat Transparansi
+            </button>
+          </div>
         </div>
       </div>
     </section>

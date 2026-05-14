@@ -8,16 +8,37 @@ import L from "leaflet";
 const normalizeProvinceName = (name) => {
   if (!name) return "";
 
-  let upper = name.toUpperCase().trim().replace(/\./g, "").replace(/\s+/g, " ");
+  let upper = name
+    .toUpperCase()
+    .trim()
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ");
 
   if (upper.includes("ACEH")) return "ACEH";
   if (upper.includes("JAKARTA")) return "DKI JAKARTA";
-  if (upper.includes("YOGYAKARTA")) return "DAERAH ISTIMEWA YOGYAKARTA";
-  if (upper.includes("BANGKA")) return "KEPULAUAN BANGKA BELITUNG";
-  if (upper.includes("KEPULAUAN RIAU") || upper === "KEP RIAU")
+
+  if (upper.includes("YOGYAKARTA")) {
+    return "DAERAH ISTIMEWA YOGYAKARTA";
+  }
+
+  if (upper.includes("BANGKA")) {
+    return "KEPULAUAN BANGKA BELITUNG";
+  }
+
+  if (
+    upper.includes("KEPULAUAN RIAU") ||
+    upper === "KEP RIAU"
+  ) {
     return "KEPULAUAN RIAU";
-  if (upper === "NTB") return "NUSA TENGGARA BARAT";
-  if (upper === "NTT") return "NUSA TENGGARA TIMUR";
+  }
+
+  if (upper === "NTB") {
+    return "NUSA TENGGARA BARAT";
+  }
+
+  if (upper === "NTT") {
+    return "NUSA TENGGARA TIMUR";
+  }
 
   return upper;
 };
@@ -44,19 +65,27 @@ const getColor = (status) => {
   switch (status) {
     case "DANGER":
       return "#ef4444";
+
     case "WARNING":
       return "#facc15";
+
     case "SAFE":
       return "#22c55e";
+
     default:
       return "#d1d5db";
   }
 };
 
-const indonesiaBounds = L.latLngBounds(L.latLng(-12, 94), L.latLng(8, 142));
+const indonesiaBounds = L.latLngBounds(
+  L.latLng(-12, 94),
+  L.latLng(8, 142),
+);
 
 const Map = ({ onProvinceClick }) => {
-  const [provinceRiskData, setProvinceRiskData] = useState({});
+  const [provinceRiskData, setProvinceRiskData] =
+    useState({});
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,33 +97,64 @@ const Map = ({ onProvinceClick }) => {
           `${import.meta.env.VITE_BE_LINK}/riskMap`,
         );
 
+        console.log(
+          "RESPONSE API:",
+          response.data,
+        );
+
         const result = response.data;
 
-        if (!result.success) {
-          throw new Error("Failed fetch risk map");
-        }
+        const apiData =
+          result.data || result;
 
         const mappedData = {};
 
-        result.data.forEach((item) => {
-          const key = normalizeProvinceName(item.daerah);
+        apiData.forEach((item) => {
+          const key = normalizeProvinceName(
+            item.daerah,
+          );
 
           mappedData[key] = {
             nama: item.daerah,
-            riskScore: Number(item.index_resiko ?? 0),
-            totalAlokasi: Number(item.total_alokasi ?? 0),
-            totalAlokasiFinal: Number(item.total_alokasi_final ?? 0),
-            countDanger: Number(item.count_danger ?? 0),
-            countWarning: Number(item.count_warning ?? 0),
-            countSafe: Number(item.count_safe ?? 0),
-            totalData: Number(item.total_data ?? 0),
-            heatmapStatus: item.heatmap_status,
+            riskScore: Number(
+              item.index_resiko ?? 0,
+            ),
+            totalAlokasi: Number(
+              item.total_alokasi ?? 0,
+            ),
+            totalAlokasiFinal: Number(
+              item.total_alokasi_final ?? 0,
+            ),
+            countDanger: Number(
+              item.count_danger ?? 0,
+            ),
+            countWarning: Number(
+              item.count_warning ?? 0,
+            ),
+            countSafe: Number(
+              item.count_safe ?? 0,
+            ),
+            totalData: Number(
+              item.total_data ?? 0,
+            ),
+            heatmapStatus:
+              item.heatmap_status,
+            heatmapColor:
+              item.heatmap_color,
           };
         });
 
+        console.log(
+          "MAPPED DATA:",
+          mappedData,
+        );
+
         setProvinceRiskData(mappedData);
       } catch (err) {
-        console.error("Fetch risk map error:", err);
+        console.error(
+          "Fetch risk map error:",
+          err,
+        );
       } finally {
         setLoading(false);
       }
@@ -103,7 +163,9 @@ const Map = ({ onProvinceClick }) => {
     fetchRiskMap();
   }, []);
 
-  const getProvinceNameFromGeoJson = (feature) => {
+  const getProvinceNameFromGeoJson = (
+    feature,
+  ) => {
     return normalizeProvinceName(
       feature.properties.name ||
         feature.properties.Propinsi ||
@@ -113,22 +175,48 @@ const Map = ({ onProvinceClick }) => {
     );
   };
 
+  const findProvince = (geoName) => {
+    return Object.values(
+      provinceRiskData,
+    ).find(
+      (item) =>
+        normalizeProvinceName(item.nama) ===
+        normalizeProvinceName(geoName),
+    );
+  };
+
   const styleFeature = (feature) => {
-    const name = getProvinceNameFromGeoJson(feature);
+    const name =
+      getProvinceNameFromGeoJson(feature);
+
     const data = provinceRiskData[name];
 
+    if (!data) {
+      console.log(
+        "Tidak cocok dengan API:",
+        name,
+      );
+    }
+
     return {
-      fillColor: getColor(data?.heatmapStatus),
+      fillColor: getColor(
+        data?.heatmapStatus,
+      ),
       fillOpacity: data ? 0.85 : 0.25,
       color: "#ffffff",
       weight: 1.2,
-      cursor: "pointer",
     };
   };
 
-  const onEachFeature = (feature, layer) => {
-    const name = getProvinceNameFromGeoJson(feature);
-    const mapData = provinceRiskData[name];
+  const onEachFeature = (
+    feature,
+    layer,
+  ) => {
+    const name =
+      getProvinceNameFromGeoJson(feature);
+
+    const mapData =
+      provinceRiskData[name];
 
     if (!mapData) {
       layer.bindTooltip(
@@ -149,70 +237,106 @@ const Map = ({ onProvinceClick }) => {
       return;
     }
 
-    const riskColor = getColor(mapData.heatmapStatus);
+    const riskColor = getColor(
+      mapData.heatmapStatus,
+    );
 
     layer.bindTooltip(
       `
       <div style="font-family:sans-serif; min-width:210px; padding:6px">
+
         <p style="font-weight:700; font-size:14px; margin:0 0 8px">
           ${mapData.nama}
         </p>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Status:</span>
+
           <span style="font-weight:700; color:${riskColor}">
             ${mapData.heatmapStatus}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Index Risiko:</span>
+          <span style="color:#6b7280">
+            Index Risiko:
+          </span>
+
           <span style="font-weight:700">
-            ${mapData.riskScore.toFixed(2)}
+            ${mapData.riskScore.toFixed(
+              2,
+            )}
           </span>
         </div>
 
         <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Danger:</span>
-          <span style="font-weight:600">${mapData.countDanger}</span>
+          <span style="color:#6b7280">
+            Danger:
+          </span>
+
+          <span style="font-weight:600">
+            ${mapData.countDanger}
+          </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Warning:</span>
-          <span style="font-weight:600">${mapData.countWarning}</span>
+          <span style="color:#6b7280">
+            Warning:
+          </span>
+
+          <span style="font-weight:600">
+            ${mapData.countWarning}
+          </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Safe:</span>
-          <span style="font-weight:600">${mapData.countSafe}</span>
+          <span style="color:#6b7280">
+            Safe:
+          </span>
+
+          <span style="font-weight:600">
+            ${mapData.countSafe}
+          </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Total Data:</span>
-          <span style="font-weight:600">${mapData.totalData}</span>
+          <span style="color:#6b7280">
+            Total Data:
+          </span>
+
+          <span style="font-weight:600">
+            ${mapData.totalData}
+          </span>
         </div>
 
         <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Total Alokasi:</span>
+          <span style="color:#6b7280">
+            Total Alokasi:
+          </span>
+
           <span style="font-weight:600">
-            ${formatCurrency(mapData.totalAlokasi)}
+            ${formatCurrency(
+              mapData.totalAlokasi,
+            )}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px">
-          <span style="color:#6b7280">Alokasi Final:</span>
+          <span style="color:#6b7280">
+            Alokasi Final:
+          </span>
+
           <span style="font-weight:600">
-            ${formatCurrency(mapData.totalAlokasiFinal)}
+            ${formatCurrency(
+              mapData.totalAlokasiFinal,
+            )}
           </span>
         </div>
 
-        <p style="font-size:11px; color:#6b7280; margin:8px 0 0">
-          Klik untuk melihat detail daerah
-        </p>
       </div>
       `,
       {
@@ -223,18 +347,14 @@ const Map = ({ onProvinceClick }) => {
 
     layer.on({
       click() {
-        if (onProvinceClick) {
-          onProvinceClick({
-            name: mapData.nama,
-            skor: mapData.riskScore,
-            status: mapData.heatmapStatus,
-            anomali: mapData.countDanger,
-            warning: mapData.countWarning,
-            safe: mapData.countSafe,
-            totalData: mapData.totalData,
-            totalAlokasi: mapData.totalAlokasi,
-            totalAlokasiFinal: mapData.totalAlokasiFinal,
-          });
+        const found =
+          findProvince(name);
+
+        if (
+          found &&
+          onProvinceClick
+        ) {
+          onProvinceClick(found);
         }
       },
 
@@ -247,7 +367,9 @@ const Map = ({ onProvinceClick }) => {
 
       mouseout(e) {
         e.target.setStyle({
-          fillOpacity: 0.85,
+          fillOpacity: mapData
+            ? 0.85
+            : 0.25,
           weight: 1.2,
         });
       },
@@ -279,6 +401,7 @@ const Map = ({ onProvinceClick }) => {
         maxBoundsViscosity={1.0}
         scrollWheelZoom={true}
         zoomControl={true}
+        worldCopyJump={false}
         style={{
           height: "100%",
           width: "100%",
@@ -286,7 +409,11 @@ const Map = ({ onProvinceClick }) => {
         }}
       >
         <GeoJSON
-          key={JSON.stringify(Object.keys(provinceRiskData))}
+          key={JSON.stringify(
+            Object.keys(
+              provinceRiskData,
+            ),
+          )}
           data={indonesiaGeoJson}
           style={styleFeature}
           onEachFeature={onEachFeature}

@@ -8,6 +8,7 @@ const HeroAudit = ({
   return (
     <section className="relative w-full h-[320px] sm:h-[400px] md:h-[500px] px-4 sm:px-6 md:px-10 pt-4 md:pt-6 overflow-hidden mt-10 md:mt-12">
       <div className="relative max-w-7xl mx-auto h-full rounded-3xl overflow-hidden">
+        
         {/* Background Image */}
         <img
           src={analyzerHero}
