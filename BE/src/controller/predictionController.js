@@ -12,7 +12,6 @@ const getAllData = async (req, res) => {
   }
 };
 
-
 module.exports = {
     getAllData,
 }
