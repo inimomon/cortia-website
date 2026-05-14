@@ -8,6 +8,7 @@ import AuditDetailPage from './pages/AuditDetailPage';
 import FeaturePage from './pages/FeaturePage';
 import DashboardPage from './pages/DashboardPage';
 import ExplorePage from './pages/ExplorePage';
+import DetailProv from './pages/DetailProv';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/audit/:id" element={<AuditDetailPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path='/explore' element={<ExplorePage />} />
+        <Route path='/detail-prov/:id' element={<DetailProv />} />
       </Routes>
     </BrowserRouter>
   )
