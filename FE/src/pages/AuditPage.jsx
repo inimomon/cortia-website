@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 // import Navbar from '../components/Navbar';
-import Navbar from '../ui/Navbar';
+import Navbar from '../components/ui/Navbar';
 import { File } from 'lucide-react';
-import Footer from '../ui/Footer';
+import Footer from '../components/ui/Footer';
 
-const API = 'http://localhost:8123/api/audit';
+const PORT = import.meta.env.PORT || '8001';
+const API = `http://localhost:${PORT}/api/audit`;
 const REQUIRED_COLUMNS = [
   'nama_daerah',
   'tender_title',
