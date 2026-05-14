@@ -73,7 +73,7 @@ const RegisterPage = () => {
       setLoading(true);
 
       await axios.post(
-        "http://localhost:8001/api/v1/auth/register",
+        `${import.meta.env.VITE_BE_LINK}/auth/register`,
         formData
       );
 

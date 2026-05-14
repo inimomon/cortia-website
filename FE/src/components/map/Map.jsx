@@ -12,32 +12,67 @@ const normalizeProvinceName = (name) => {
     .toUpperCase()
     .trim()
     .replace(/\./g, "")
+    .replace(/_/g, " ")
+    .replace(/-/g, " ")
     .replace(/\s+/g, " ");
 
-  if (upper.includes("ACEH")) return "ACEH";
-  if (upper.includes("JAKARTA")) return "DKI JAKARTA";
+  // KHUSUS
+  if (upper.includes("ACEH")) {
+    return "ACEH";
+  }
+
+  if (upper.includes("JAKARTA")) {
+    return "DKI JAKARTA";
+  }
 
   if (upper.includes("YOGYAKARTA")) {
     return "DAERAH ISTIMEWA YOGYAKARTA";
   }
 
-  if (upper.includes("BANGKA")) {
+  // BANGKA
+  if (
+    upper.includes("BANGKA BELITUNG") ||
+    upper.includes("KEPULAUAN BANGKA BELITUNG")
+  ) {
     return "KEPULAUAN BANGKA BELITUNG";
   }
 
-  if (
-    upper.includes("KEPULAUAN RIAU") ||
-    upper === "KEP RIAU"
-  ) {
+  // KEPRI
+  if (upper.includes("KEPULAUAN RIAU") || upper.includes("KEP RIAU")) {
     return "KEPULAUAN RIAU";
   }
 
-  if (upper === "NTB") {
+  // NTB
+  if (
+    upper === "NTB" ||
+    upper === "NUSATENGGARA BARAT" ||
+    upper === "NUSA TENGGARA BARAT"
+  ) {
     return "NUSA TENGGARA BARAT";
   }
 
-  if (upper === "NTT") {
+  // NTT
+  if (
+    upper === "NTT" ||
+    upper === "NUSATENGGARA TIMUR" ||
+    upper === "NUSA TENGGARA TIMUR"
+  ) {
     return "NUSA TENGGARA TIMUR";
+  }
+
+  // KALBAR
+  if (upper === "KALIMANTANBARAT" || upper === "KALIMANTAN BARAT") {
+    return "KALIMANTAN BARAT";
+  }
+
+  // KALTENG
+  if (upper === "KALIMANTANTENGAH" || upper === "KALIMANTAN TENGAH") {
+    return "KALIMANTAN TENGAH";
+  }
+
+  // KALSEL
+  if (upper === "KALIMANTANSELATAN" || upper === "KALIMANTAN SELATAN") {
+    return "KALIMANTAN SELATAN";
   }
 
   return upper;

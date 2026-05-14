@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
-import ReactMarkdown from "react-markdown"
+import ReactMarkdown from "react-markdown";
 
 const PORT = import.meta.env.VITE_BE_LINK || "http://localhost:8005/api/v1";
 const API = `${PORT}/audit`;
@@ -274,7 +274,7 @@ export default function AuditDetailPage() {
               </p>
 
               <div className="border-l-4 border-red-500 pl-5">
-                <h1 className="text-5xl font-bold text-slate-900 leading-tight">
+                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-snug">
                   {transactions?.[0]?.tender_title || "Tidak ada judul proyek"}
                 </h1>
 
@@ -295,7 +295,7 @@ export default function AuditDetailPage() {
                 ALOKASI TOTAL
               </p>
 
-              <p className="text-4xl font-bold text-gray-900 leading-tight">
+              <p className="text-2xl font-semibold text-gray-900 leading-tight">
                 Rp {formatNumber(totalAllocation)}
               </p>
             </div>
@@ -327,7 +327,19 @@ export default function AuditDetailPage() {
 
               const score = Number(tx.score || 0);
 
-              const riskScore = Math.min(100, Math.round(score * 220));
+              let riskScore = 0;
+
+              if (score >= 0.7) {
+                riskScore = 95;
+              } else if (score >= 0.5) {
+                riskScore = 82;
+              } else if (score >= 0.35) {
+                riskScore = 64;
+              } else if (score >= 0.2) {
+                riskScore = 42;
+              } else {
+                riskScore = 18;
+              }
 
               const isMarkup = gapHarga > 0;
 
@@ -369,8 +381,39 @@ export default function AuditDetailPage() {
                         PENJELASAN AI
                       </p>
 
-                      <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none">
-                        <ReactMarkdown>{explanation}</ReactMarkdown>
+                      <div className="space-y-3">
+                        {String(explanation)
+                          .replace(/\*\*/g, "")
+                          .replace("HASIL ANALISIS KRITIS (CORTIA):", "")
+                          .replace("CATATAN PEMERIKSAAN:", "")
+                          .replace("LAPORAN HASIL NORMAL:", "")
+                          .split("•")
+                          .filter((item) => item.trim())
+                          .map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start gap-3 bg-white border border-orange-100 rounded-xl p-4"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold shrink-0">
+                                {idx + 1}
+                              </div>
+
+                              <p className="text-sm text-gray-700 leading-relaxed">
+                                {item
+                                  .trim()
+                                  .replace("Cat Goods", "Kategori Pengadaan")
+                                  .replace("Cat Works", "Kategori Pengadaan")
+                                  .replace("Cat Services", "Kategori Pengadaan")
+                                  .replace("Goods", "Pengadaan Barang")
+                                  .replace("Works", "Pekerjaan Konstruksi")
+                                  .replace("Services", "Jasa Layanan")
+                                  .replace(
+                                    "Consulting Services",
+                                    "Jasa Konsultansi",
+                                  )}
+                              </p>
+                            </div>
+                          ))}
                       </div>
                     </div>
 
@@ -479,6 +522,7 @@ export default function AuditDetailPage() {
                       </div>
 
                       {/* RISK LEVEL */}
+                      {/* RISK LEVEL */}
                       <div>
                         <div className="flex justify-between text-sm mb-2">
                           <span>Risk Level</span>
@@ -547,12 +591,59 @@ export default function AuditDetailPage() {
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-slate-300">
-                        <p className="text-xs text-gray-500 leading-relaxed text-center">
-                          Analisis berasal dari data transaksi aktual, skor AI,
-                          deviasi harga pengadaan, dan pola vendor historis pada
-                          database procurement.
-                        </p>
+                      <div className="space-y-3 text-sm text-gray-600">
+                        <div className="bg-white rounded-xl p-4 border border-slate-200">
+                          <p className="font-semibold text-slate-800 mb-1">
+                            1. Deviasi Harga Pengadaan
+                          </p>
+
+                          <p>
+                            Model membandingkan nilai tender awal dengan nilai
+                            akhir kontrak. Semakin besar deviasi atau selisih
+                            harga, semakin tinggi risiko penyimpangan anggaran.
+                          </p>
+                        </div>
+
+                        <div className="bg-white rounded-xl p-4 border border-slate-200">
+                          <p className="font-semibold text-slate-800 mb-1">
+                            2. Kecepatan Proses Tender
+                          </p>
+
+                          <p>
+                            Sistem mengevaluasi durasi proses tender menggunakan
+                            <span className="font-semibold">
+                              {" "}
+                              days_to_award
+                            </span>
+                            . Tender yang selesai terlalu cepat dianggap tidak
+                            normal karena berpotensi menunjukkan vendor telah
+                            ditentukan sebelumnya.
+                          </p>
+                        </div>
+
+                        <div className="bg-white rounded-xl p-4 border border-slate-200">
+                          <p className="font-semibold text-slate-800 mb-1">
+                            3. Pola Historis Vendor & Kategori
+                          </p>
+
+                          <p>
+                            AI membandingkan pola vendor, kategori pengadaan,
+                            serta karakteristik transaksi dengan data historis
+                            daerah lain pada database procurement nasional.
+                          </p>
+                        </div>
+
+                        <div className="bg-white rounded-xl p-4 border border-slate-200">
+                          <p className="font-semibold text-slate-800 mb-1">
+                            4. Explainable AI (SHAP Analysis)
+                          </p>
+
+                          <p>
+                            Setiap keputusan AI dijelaskan menggunakan SHAP
+                            Value Analysis untuk mengetahui fitur mana yang
+                            paling mempengaruhi skor risiko transaksi.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -573,7 +664,7 @@ export default function AuditDetailPage() {
                 PENGELUARAN DILAPORKAN
               </p>
 
-              <p className="text-4xl font-bold text-slate-900">
+              <p className="text-xl font-semibold text-slate-900">
                 Rp {formatNumber(totalAllocation)}
               </p>
             </div>
@@ -583,7 +674,7 @@ export default function AuditDetailPage() {
                 ESTIMASI AI (FAIR VALUE)
               </p>
 
-              <p className="text-4xl font-bold text-emerald-700">
+              <p className="text-xl font-semibold text-slate-900">
                 Rp {formatNumber(aiEstimate)}
               </p>
             </div>
@@ -593,7 +684,7 @@ export default function AuditDetailPage() {
                 POTENSI KERUGIAN NEGARA
               </p>
 
-              <p className="text-4xl font-bold text-red-600">
+              <p className="text-xl font-bold text-red-600">
                 Rp {formatNumber(stateLoss)}
               </p>
             </div>
