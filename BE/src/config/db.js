@@ -7,6 +7,7 @@ const sequelize = new Sequelize(
   process.env.DB_PASS,
   {
     host: process.env.HOST,
+    port: process.env.DB_PORT,
     dialect: "mysql",
   },
 );
@@ -19,4 +20,4 @@ const connectDB = async () => {
   }
 };
 
-module.exports = { sequelize, connectDB };
+module.exports = sequelize;
