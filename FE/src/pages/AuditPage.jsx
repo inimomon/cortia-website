@@ -6,7 +6,7 @@ import { File } from 'lucide-react';
 import Footer from '../components/ui/Footer';
 
 const PORT = import.meta.env.PORT || '8001';
-const API = `http://localhost:${PORT}/api/audit`;
+const API = `http://localhost:${PORT}/api/v1/audit`;
 const REQUIRED_COLUMNS = [
   'nama_daerah',
   'tender_title',

@@ -63,7 +63,7 @@ export default function HomePage() {
         setLoading(true);
 
         const response = await axios.get(
-          "http://localhost:8005/api/v1/riskMap/",
+          "http://localhost:8001/api/v1/riskMap/",
         );
 
         setRiskData(response.data.data);
