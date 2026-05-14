@@ -4,36 +4,55 @@ import "leaflet/dist/leaflet.css";
 import indonesiaGeoJson from "../../data/indonesia-prov.json";
 import axios from "axios";
 
-const getRiskColor = (score) => {
-  if (score >= 75) return "#ef4444";
-  if (score >= 50) return "#facc15";
-  return "#22c55e";
-};
+const normalizeProvinceName = (name) => {
+  if (!name) return "";
 
-const getRiskLabel = (score) => {
-  if (score >= 75) return "Critical";
-  if (score >= 50) return "Warning";
-  return "Safe";
-};
+  let upper = name.toUpperCase().trim().replace(/\./g, "").replace(/\s+/g, " ");
 
+  if (upper.includes("ACEH")) return "ACEH";
+  if (upper.includes("JAKARTA")) return "DKI JAKARTA";
+  if (upper.includes("YOGYAKARTA")) return "DAERAH ISTIMEWA YOGYAKARTA";
+  if (upper.includes("BANGKA")) return "KEPULAUAN BANGKA BELITUNG";
+  if (upper.includes("KEPULAUAN RIAU") || upper === "KEP RIAU")
+    return "KEPULAUAN RIAU";
+  if (upper === "NTB") return "NUSA TENGGARA BARAT";
+  if (upper === "NTT") return "NUSA TENGGARA TIMUR";
+
+  return upper;
+};
 const formatCurrency = (value) => {
-  if (!value) return "Rp 0";
+  const number = Number(value || 0);
 
-  if (value >= 1_000_000_000_000) {
-    return `Rp ${(value / 1_000_000_000_000).toFixed(1)}T`;
+  if (number >= 1_000_000_000_000) {
+    return `Rp ${(number / 1_000_000_000_000).toFixed(1)}T`;
   }
 
-  if (value >= 1_000_000_000) {
-    return `Rp ${(value / 1_000_000_000).toFixed(1)}B`;
+  if (number >= 1_000_000_000) {
+    return `Rp ${(number / 1_000_000_000).toFixed(1)}B`;
   }
 
-  if (value >= 1_000_000) {
-    return `Rp ${(value / 1_000_000).toFixed(1)}M`;
+  if (number >= 1_000_000) {
+    return `Rp ${(number / 1_000_000).toFixed(1)}M`;
   }
 
-  return `Rp ${value}`;
+  return `Rp ${number}`;
 };
 
+const getColor = (status) => {
+  switch (status) {
+    case "DANGER":
+      return "#ef4444";
+
+    case "WARNING":
+      return "#facc15";
+
+    case "SAFE":
+      return "#22c55e";
+
+    default:
+      return "#d1d5db";
+  }
+};
 const Map = () => {
   const [provinceRiskData, setProvinceRiskData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -43,9 +62,9 @@ const Map = () => {
       try {
         setLoading(true);
 
-        const response = await axios.get("http://localhost:8123/api/risk-map");
-
-        console.log("API RESPONSE:", response.data);
+        const response = await axios.get(
+          "http://localhost:8005/api/v1/riskMap",
+        );
 
         const result = response.data;
 
@@ -56,27 +75,27 @@ const Map = () => {
         const mappedData = {};
 
         result.data.forEach((item) => {
-          mappedData[item.daerah?.toUpperCase()] = {
+          const key = normalizeProvinceName(item.daerah);
+
+          mappedData[key] = {
+            nama: item.daerah,
             riskScore: Number(item.index_resiko ?? 0),
             totalAlokasi: Number(item.total_alokasi ?? 0),
-            kasusAktif: Number(item.count_danger ?? 0),
+            totalAlokasiFinal: Number(item.total_alokasi_final ?? 0),
+            countDanger: Number(item.count_danger ?? 0),
+            countWarning: Number(item.count_warning ?? 0),
+            countSafe: Number(item.count_safe ?? 0),
             totalData: Number(item.total_data ?? 0),
+            heatmapStatus: item.heatmap_status,
+            heatmapColor: item.heatmap_color,
           };
         });
 
-        console.log("MAPPED DATA:", mappedData);
+        console.log("DATA API:", mappedData);
 
         setProvinceRiskData(mappedData);
       } catch (err) {
-        console.error("Fetch error:", err);
-
-        if (err.response) {
-          console.log("Response Error:", err.response.data);
-        }
-
-        if (err.request) {
-          console.log("No response from backend");
-        }
+        console.error("Fetch risk map error:", err);
       } finally {
         setLoading(false);
       }
@@ -85,77 +104,117 @@ const Map = () => {
     fetchRiskMap();
   }, []);
 
-  const styleFeature = (feature) => {
-    const name = (
-      feature.properties.name || feature.properties.Propinsi
-    )?.toUpperCase();
+  const getProvinceNameFromGeoJson = (feature) => {
+    return normalizeProvinceName(
+      feature.properties.name ||
+        feature.properties.Propinsi ||
+        feature.properties.PROVINSI ||
+        feature.properties.provinsi ||
+        feature.properties.NAME_1,
+    );
+  };
 
+  const styleFeature = (feature) => {
+    const name = getProvinceNameFromGeoJson(feature);
     const data = provinceRiskData[name];
 
-    const score = data?.riskScore ?? 0;
+    if (!data) {
+      console.log("Tidak cocok:", name);
+    }
 
     return {
-      fillColor: getRiskColor(score),
-      fillOpacity: 0.7,
+      fillColor: getColor(data?.heatmapStatus),
+      fillOpacity: data ? 0.85 : 0.25,
       color: "#ffffff",
-      weight: 1.5,
+      weight: 1.2,
     };
   };
 
   const onEachFeature = (feature, layer) => {
-    const name = (
-      feature.properties.name || feature.properties.Propinsi
-    )?.toUpperCase();
-
+    const name = getProvinceNameFromGeoJson(feature);
     const data = provinceRiskData[name];
 
-    if (!data) return;
+    if (!data) {
+      layer.bindTooltip(
+        `
+        <div style="font-family:sans-serif; padding:6px">
+          <b>${name}</b><br/>
+          <span style="font-size:12px; color:#ef4444">
+            Data tidak ditemukan
+          </span>
+        </div>
+        `,
+        {
+          sticky: true,
+          opacity: 1,
+        },
+      );
 
-    const { riskScore, totalAlokasi, kasusAktif, totalData } = data;
+      return;
+    }
 
-    const riskLabel = getRiskLabel(riskScore);
-
-    const riskColor =
-      riskScore >= 75 ? "#ef4444" : riskScore >= 50 ? "#ca8a04" : "#16a34a";
+    const riskColor = getColor(data.heatmapStatus);
 
     layer.bindTooltip(
       `
-      <div style="font-family:sans-serif; min-width:180px; padding:4px">
+      <div style="font-family:sans-serif; min-width:210px; padding:6px">
+
         <p style="font-weight:700; font-size:14px; margin:0 0 8px">
-          ${name}
+          ${data.nama}
         </p>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Indeks Risiko:</span>
-
+          <span style="color:#6b7280">Status:</span>
           <span style="font-weight:700; color:${riskColor}">
-            ${riskScore.toFixed(0)} — ${riskLabel}
+            ${data.heatmapStatus}
           </span>
         </div>
+
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+          <span style="color:#6b7280">Index Risiko:</span>
+          <span style="font-weight:700">
+            ${data.riskScore.toFixed(2)}
+          </span>
+        </div>
+
+        <hr style="margin:6px 0"/>
+
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+          <span style="color:#6b7280">Danger:</span>
+          <span style="font-weight:600">${data.countDanger}</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+          <span style="color:#6b7280">Warning:</span>
+          <span style="font-weight:600">${data.countWarning}</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+          <span style="color:#6b7280">Safe:</span>
+          <span style="font-weight:600">${data.countSafe}</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+          <span style="color:#6b7280">Total Data:</span>
+          <span style="font-weight:600">${data.totalData}</span>
+        </div>
+
+        <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Total Alokasi:</span>
-
           <span style="font-weight:600">
-            ${formatCurrency(totalAlokasi)}
-          </span>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Kasus High Risk:</span>
-
-          <span style="font-weight:600">
-            ${kasusAktif}
+            ${formatCurrency(data.totalAlokasi)}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px">
-          <span style="color:#6b7280">Total Data:</span>
-
+          <span style="color:#6b7280">Alokasi Final:</span>
           <span style="font-weight:600">
-            ${totalData}
+            ${formatCurrency(data.totalAlokasiFinal)}
           </span>
         </div>
+
       </div>
       `,
       {
@@ -168,14 +227,14 @@ const Map = () => {
       mouseover(e) {
         e.target.setStyle({
           fillOpacity: 1,
-          weight: 2.5,
+          weight: 2,
         });
       },
 
       mouseout(e) {
         e.target.setStyle({
-          fillOpacity: 0.7,
-          weight: 1.5,
+          fillOpacity: 0.85,
+          weight: 1.2,
         });
       },
     });
@@ -197,11 +256,6 @@ const Map = () => {
       maxZoom={7}
       scrollWheelZoom={true}
       style={{ height: "100%", width: "100%" }}
-      maxBounds={[
-        [-11, 94],
-        [6, 142],
-      ]}
-      maxBoundsViscosity={0.8}
     >
       <TileLayer
         attribution="&copy; OpenStreetMap contributors"
@@ -209,7 +263,7 @@ const Map = () => {
       />
 
       <GeoJSON
-        key="indonesia"
+        key={JSON.stringify(Object.keys(provinceRiskData))}
         data={indonesiaGeoJson}
         style={styleFeature}
         onEachFeature={onEachFeature}

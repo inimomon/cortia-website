@@ -20,7 +20,7 @@ const LogoList = () => {
         <img
             src={AiConnectHitam}
             alt=""
-            className='max-h-full max-w-full object-contain'
+            className='max-h-full max-w-full object-contain scale-180'
         />
     </div>
     <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>
