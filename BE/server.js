@@ -4,12 +4,16 @@ const express = require("express");
 const {connectDB, sequelize} = require("./src/config/db");
 // import model
 const predictionModel = require("./src/model/Prediction");
+const authModel = require("./src/model/User");
 // import router
 const predictionRouter = require("./src/controller/predictionController");
+const authRouter = require("./src/controller/authController");
 const app = express();
 
 // use router
-app.use("/api/v1/prediction")
+app.use("/api/v1/prediction", predictionRouter);
+app.use("/api/v1/auth",authRouter);
+
 app.get("/", (req, res) => {
   res.json("hello");
 });
