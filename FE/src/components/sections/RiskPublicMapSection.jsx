@@ -11,7 +11,7 @@ const RiskPublicMapSection = () => {
     const fetchTopRisks = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8005/api/v1/riskMap",
+          "http://localhost:8001/api/v1/riskMap",
         );
 
         if (!response.data.success) return;
