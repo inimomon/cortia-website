@@ -9,35 +9,35 @@ import ugm from "../../assets/ugm.png";
 const LogoList = () => {
   return (
     <>
-    <div className='w-24 h-16 flex items-center justify-center'>
+    <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>
         <img
             src={opentender}
             alt=""
             className='max-h-full max-w-full object-contain'
         />
     </div>
-    <div className='w-24 h-16 flex items-center justify-center'>
+    <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>
         <img
             src={AiConnectHitam}
             alt=""
-            className='max-h-full max-w-full object-contain'
+            className='max-h-full max-w-full object-contain scale-180'
         />
     </div>
-    <div className='w-24 h-16 flex items-center justify-center'>
+    <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>
         <img
             src={ugm}
             alt=""
             className='max-h-full max-w-full object-contain'
         />
     </div>
-    <div className='w-24 h-16 flex items-center justify-center'>
+    <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>
         <img
             src={DTETI}
             alt=""
             className='max-h-full max-w-full object-contain'
         />
     </div>
-    <div className='w-24 h-16 flex items-center justify-center'>
+    <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>
         <img
             src={FINDIT}
             alt=""
