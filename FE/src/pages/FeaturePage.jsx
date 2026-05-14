@@ -138,7 +138,7 @@ export default function FeaturePage() {
                 <h3 className={`font-bold text-sm mb-2 ${step.titleColor || 'text-gray-800'}`}>
                   {step.title}
                 </h3>
-                <p className="text-[11px] text-gray-500 leading-relaxed max-w-[150px]">
+                <p className="text-[11px] text-gray-500 leading-relaxed max-w-38">
                   {step.desc}
                 </p>
               </div>
