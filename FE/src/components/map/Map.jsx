@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, GeoJSON } from "react-leaflet";
+import { MapContainer, GeoJSON, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import indonesiaGeoJson from "../../data/indonesia-prov.json";
 import axios from "axios";
@@ -16,10 +16,8 @@ const normalizeProvinceName = (name) => {
 
   if (upper.includes("ACEH")) return "ACEH";
   if (upper.includes("JAKARTA")) return "DKI JAKARTA";
-  if (upper.includes("YOGYAKARTA"))
-    return "DAERAH ISTIMEWA YOGYAKARTA";
-  if (upper.includes("BANGKA"))
-    return "KEPULAUAN BANGKA BELITUNG";
+  if (upper.includes("YOGYAKARTA")) return "DAERAH ISTIMEWA YOGYAKARTA";
+  if (upper.includes("BANGKA")) return "KEPULAUAN BANGKA BELITUNG";
   if (upper.includes("KEPULAUAN RIAU") || upper === "KEP RIAU")
     return "KEPULAUAN RIAU";
   if (upper === "NTB") return "NUSA TENGGARA BARAT";
@@ -27,7 +25,6 @@ const normalizeProvinceName = (name) => {
 
   return upper;
 };
-
 const formatCurrency = (value) => {
   const number = Number(value || 0);
 
@@ -55,7 +52,7 @@ const getColor = (status) => {
     case "SAFE":
       return "#22c55e";
     default:
-      return "#374151";
+      return "#d1d5db";
   }
 };
 
@@ -63,7 +60,6 @@ const indonesiaBounds = L.latLngBounds(
   L.latLng(-12, 94),
   L.latLng(8, 142),
 );
-
 const Map = () => {
   const [provinceRiskData, setProvinceRiskData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -102,6 +98,7 @@ const Map = () => {
           };
         });
 
+        console.log("DATA API:", mappedData);
         setProvinceRiskData(mappedData);
       } catch (err) {
         console.error("Fetch risk map error:", err);
@@ -134,9 +131,12 @@ const Map = () => {
     const name = getProvinceNameFromGeoJson(feature);
     const data = provinceRiskData[name];
 
+      console.log("Tidak cocok:", name);
+    }
+
     return {
       fillColor: getColor(data?.heatmapStatus),
-      fillOpacity: data ? 0.9 : 0.3,
+      fillOpacity: data ? 0.85 : 0.25,
       color: "#ffffff",
       weight: 1.2,
     };
@@ -185,14 +185,14 @@ const Map = () => {
         </p>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#9ca3af">Status:</span>
+          <span style="color:#6b7280">Status:</span>
           <span style="font-weight:700; color:${riskColor}">
             ${mapData.heatmapStatus}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#9ca3af">Index Risiko:</span>
+          <span style="color:#6b7280">Index Risiko:</span>
           <span style="font-weight:700">
             ${mapData.riskScore.toFixed(2)}
           </span>
@@ -223,14 +223,14 @@ const Map = () => {
         <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#9ca3af">Total Alokasi:</span>
+          <span style="color:#6b7280">Total Alokasi:</span>
           <span style="font-weight:600">
             ${formatCurrency(mapData.totalAlokasi)}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px">
-          <span style="color:#9ca3af">Alokasi Final:</span>
+          <span style="color:#6b7280">Alokasi Final:</span>
           <span style="font-weight:600">
             ${formatCurrency(mapData.totalAlokasiFinal)}
           </span>
@@ -261,7 +261,7 @@ const Map = () => {
 
       mouseout(e) {
         e.target.setStyle({
-          fillOpacity: 0.9,
+          fillOpacity: 0.85,
           weight: 1.2,
         });
       },
