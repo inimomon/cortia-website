@@ -146,6 +146,7 @@ export default function DashboardPage() {
             
             {/* Ringkasan Agregat */}
             <AggregateSummary stats={stats} />
+            {/* <AggregateSummary /> */}
 
             {/* Rincian Wilayah */}
             <div className="flex-1 border border-gray-200 rounded-xl p-5 bg-white flex flex-col">
@@ -165,6 +166,7 @@ export default function DashboardPage() {
 
         {/* Ringkasan Anggaran */}
         <BudgetSummary data={budgetStats} />
+        {/* <BudgetSummary /> */}
 
         {/* Map + Risk Table */}
         <RiskMonitoringSection 
@@ -174,9 +176,11 @@ export default function DashboardPage() {
           dotColor={dotColor}
           skorColor={skorColor}
         />
+        {/* <RiskMonitoringSection /> */}
 
         {/* Detail Selected Province */}
         <ProvinceDetail selected={selected} />
+        {/* <ProvinceDetail /> */}
 
         {/* Daftar Anggaran Daerah cards */}
         <section className="mb-10">

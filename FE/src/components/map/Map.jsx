@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { MapContainer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import indonesiaGeoJson from "../../data/indonesia-prov.json";
 import axios from "axios";
@@ -7,19 +7,37 @@ import axios from "axios";
 const normalizeProvinceName = (name) => {
   if (!name) return "";
 
-  let upper = name.toUpperCase().trim().replace(/\./g, "").replace(/\s+/g, " ");
+  let upper = name
+    .toUpperCase()
+    .trim()
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ");
 
   if (upper.includes("ACEH")) return "ACEH";
   if (upper.includes("JAKARTA")) return "DKI JAKARTA";
-  if (upper.includes("YOGYAKARTA")) return "DAERAH ISTIMEWA YOGYAKARTA";
-  if (upper.includes("BANGKA")) return "KEPULAUAN BANGKA BELITUNG";
-  if (upper.includes("KEPULAUAN RIAU") || upper === "KEP RIAU")
+  if (upper.includes("YOGYAKARTA"))
+    return "DAERAH ISTIMEWA YOGYAKARTA";
+  if (upper.includes("BANGKA"))
+    return "KEPULAUAN BANGKA BELITUNG";
+
+  if (
+    upper.includes("KEPULAUAN RIAU") ||
+    upper === "KEP RIAU"
+  ) {
     return "KEPULAUAN RIAU";
-  if (upper === "NTB") return "NUSA TENGGARA BARAT";
-  if (upper === "NTT") return "NUSA TENGGARA TIMUR";
+  }
+
+  if (upper === "NTB") {
+    return "NUSA TENGGARA BARAT";
+  }
+
+  if (upper === "NTT") {
+    return "NUSA TENGGARA TIMUR";
+  }
 
   return upper;
 };
+
 const formatCurrency = (value) => {
   const number = Number(value || 0);
 
@@ -53,8 +71,11 @@ const getColor = (status) => {
       return "#d1d5db";
   }
 };
+
 const Map = () => {
-  const [provinceRiskData, setProvinceRiskData] = useState({});
+  const [provinceRiskData, setProvinceRiskData] =
+    useState({});
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,7 +84,7 @@ const Map = () => {
         setLoading(true);
 
         const response = await axios.get(
-          "http://localhost:8005/api/v1/riskMap",
+          "http://localhost:8005/api/v1/riskMap"
         );
 
         const result = response.data;
@@ -75,27 +96,44 @@ const Map = () => {
         const mappedData = {};
 
         result.data.forEach((item) => {
-          const key = normalizeProvinceName(item.daerah);
+          const key = normalizeProvinceName(
+            item.daerah
+          );
 
           mappedData[key] = {
             nama: item.daerah,
-            riskScore: Number(item.index_resiko ?? 0),
-            totalAlokasi: Number(item.total_alokasi ?? 0),
-            totalAlokasiFinal: Number(item.total_alokasi_final ?? 0),
-            countDanger: Number(item.count_danger ?? 0),
-            countWarning: Number(item.count_warning ?? 0),
-            countSafe: Number(item.count_safe ?? 0),
-            totalData: Number(item.total_data ?? 0),
-            heatmapStatus: item.heatmap_status,
-            heatmapColor: item.heatmap_color,
+            riskScore: Number(
+              item.index_resiko ?? 0
+            ),
+            totalAlokasi: Number(
+              item.total_alokasi ?? 0
+            ),
+            totalAlokasiFinal: Number(
+              item.total_alokasi_final ?? 0
+            ),
+            countDanger: Number(
+              item.count_danger ?? 0
+            ),
+            countWarning: Number(
+              item.count_warning ?? 0
+            ),
+            countSafe: Number(
+              item.count_safe ?? 0
+            ),
+            totalData: Number(
+              item.total_data ?? 0
+            ),
+            heatmapStatus:
+              item.heatmap_status,
           };
         });
 
-        console.log("DATA API:", mappedData);
-
         setProvinceRiskData(mappedData);
       } catch (err) {
-        console.error("Fetch risk map error:", err);
+        console.error(
+          "Fetch risk map error:",
+          err
+        );
       } finally {
         setLoading(false);
       }
@@ -104,123 +142,148 @@ const Map = () => {
     fetchRiskMap();
   }, []);
 
-  const getProvinceNameFromGeoJson = (feature) => {
+  const getProvinceNameFromGeoJson = (
+    feature
+  ) => {
     return normalizeProvinceName(
       feature.properties.name ||
         feature.properties.Propinsi ||
         feature.properties.PROVINSI ||
         feature.properties.provinsi ||
-        feature.properties.NAME_1,
+        feature.properties.NAME_1
     );
   };
 
   const styleFeature = (feature) => {
-    const name = getProvinceNameFromGeoJson(feature);
-    const data = provinceRiskData[name];
+    const name =
+      getProvinceNameFromGeoJson(
+        feature
+      );
 
-    if (!data) {
-      console.log("Tidak cocok:", name);
-    }
+    const data =
+      provinceRiskData[name];
 
     return {
-      fillColor: getColor(data?.heatmapStatus),
-      fillOpacity: data ? 0.85 : 0.25,
+      fillColor: getColor(
+        data?.heatmapStatus
+      ),
+      fillOpacity: data
+        ? 0.85
+        : 0.25,
       color: "#ffffff",
       weight: 1.2,
     };
   };
 
-  const onEachFeature = (feature, layer) => {
-    const name = getProvinceNameFromGeoJson(feature);
-    const data = provinceRiskData[name];
+  const onEachFeature = (
+    feature,
+    layer
+  ) => {
+    const name =
+      getProvinceNameFromGeoJson(
+        feature
+      );
+
+    const data =
+      provinceRiskData[name];
 
     if (!data) {
       layer.bindTooltip(
         `
-        <div style="font-family:sans-serif; padding:6px">
+        <div style="font-family:sans-serif;padding:6px">
           <b>${name}</b><br/>
-          <span style="font-size:12px; color:#ef4444">
+          <span style="font-size:12px;color:#ef4444">
             Data tidak ditemukan
           </span>
         </div>
-        `,
+      `,
         {
           sticky: true,
           opacity: 1,
-        },
+        }
       );
 
       return;
     }
 
-    const riskColor = getColor(data.heatmapStatus);
+    const riskColor = getColor(
+      data.heatmapStatus
+    );
 
     layer.bindTooltip(
       `
-      <div style="font-family:sans-serif; min-width:210px; padding:6px">
+      <div style="font-family:sans-serif;min-width:210px;padding:6px">
 
-        <p style="font-weight:700; font-size:14px; margin:0 0 8px">
+        <p style="font-weight:700;font-size:14px;margin:0 0 8px">
           ${data.nama}
         </p>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
           <span style="color:#6b7280">Status:</span>
-          <span style="font-weight:700; color:${riskColor}">
+          <span style="font-weight:700;color:${riskColor}">
             ${data.heatmapStatus}
           </span>
         </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
           <span style="color:#6b7280">Index Risiko:</span>
           <span style="font-weight:700">
-            ${data.riskScore.toFixed(2)}
+            ${data.riskScore.toFixed(
+              2
+            )}
           </span>
         </div>
 
         <hr style="margin:6px 0"/>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
           <span style="color:#6b7280">Danger:</span>
-          <span style="font-weight:600">${data.countDanger}</span>
+          <span>${data.countDanger}</span>
         </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
           <span style="color:#6b7280">Warning:</span>
-          <span style="font-weight:600">${data.countWarning}</span>
+          <span>${data.countWarning}</span>
         </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
           <span style="color:#6b7280">Safe:</span>
-          <span style="font-weight:600">${data.countSafe}</span>
+          <span>${data.countSafe}</span>
         </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
           <span style="color:#6b7280">Total Data:</span>
-          <span style="font-weight:600">${data.totalData}</span>
+          <span>${data.totalData}</span>
         </div>
 
         <hr style="margin:6px 0"/>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
           <span style="color:#6b7280">Total Alokasi:</span>
-          <span style="font-weight:600">
-            ${formatCurrency(data.totalAlokasi)}
+          <span>
+            ${formatCurrency(
+              data.totalAlokasi
+            )}
           </span>
         </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px">
-          <span style="color:#6b7280">Alokasi Final:</span>
-          <span style="font-weight:600">
-            ${formatCurrency(data.totalAlokasiFinal)}
+        <div style="display:flex;justify-content:space-between;font-size:12px">
+          <span style="color:#6b7280">
+            Alokasi Final:
+          </span>
+          <span>
+            ${formatCurrency(
+              data.totalAlokasiFinal
+            )}
           </span>
         </div>
 
       </div>
-      `,
+    `,
       {
         sticky: true,
         opacity: 1,
-      },
+      }
     );
 
     layer.on({
@@ -251,22 +314,32 @@ const Map = () => {
   return (
     <MapContainer
       center={[-2.5489, 118.0149]}
-      zoom={4}
-      minZoom={4}
+      zoom={5}
+      minZoom={5}
       maxZoom={7}
       scrollWheelZoom={true}
-      style={{ height: "100%", width: "100%" }}
+      maxBounds={[
+        [-12, 94],
+        [8, 142],
+      ]}
+      maxBoundsViscosity={1.0}
+      className="bg-slate-100"
+      style={{
+        height: "100%",
+        width: "100%",
+      }}
     >
-      <TileLayer
-        attribution="&copy; OpenStreetMap contributors"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-
       <GeoJSON
-        key={JSON.stringify(Object.keys(provinceRiskData))}
+        key={JSON.stringify(
+          Object.keys(
+            provinceRiskData
+          )
+        )}
         data={indonesiaGeoJson}
         style={styleFeature}
-        onEachFeature={onEachFeature}
+        onEachFeature={
+          onEachFeature
+        }
       />
     </MapContainer>
   );

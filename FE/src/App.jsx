@@ -7,6 +7,7 @@ import AuditPage from './pages/AuditPage';
 import AuditDetailPage from './pages/AuditDetailPage';
 import FeaturePage from './pages/FeaturePage';
 import DashboardPage from './pages/DashboardPage';
+import ExplorePage from './pages/ExplorePage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path='/audit' element={<AuditPage /> } />
         <Route path="/audit/:id" element={<AuditDetailPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path='/explore' element={<ExplorePage />} />
       </Routes>
     </BrowserRouter>
   )
