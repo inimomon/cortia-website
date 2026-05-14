@@ -47,13 +47,10 @@ const getColor = (status) => {
   switch (status) {
     case "DANGER":
       return "#ef4444";
-
     case "WARNING":
       return "#facc15";
-
     case "SAFE":
       return "#22c55e";
-
     default:
       return "#d1d5db";
   }
@@ -73,7 +70,7 @@ const Map = () => {
         setLoading(true);
 
         const response = await axios.get(
-          "http://localhost:8001/api/v1/riskMap",
+          `${import.meta.env.VITE_BE_LINK}/riskMap`,
         );
 
         const result = response.data;
@@ -123,6 +120,13 @@ const Map = () => {
     );
   };
 
+  const findProvince = (geoName) => {
+    return data.find(
+      (item) =>
+        normalizeProvinceName(item.name) === normalizeProvinceName(geoName),
+    );
+  };
+
   const styleFeature = (feature) => {
     const name = getProvinceNameFromGeoJson(feature);
     const data = provinceRiskData[name];
@@ -140,9 +144,9 @@ const Map = () => {
 
   const onEachFeature = (feature, layer) => {
     const name = getProvinceNameFromGeoJson(feature);
-    const data = provinceRiskData[name];
+    const mapData = provinceRiskData[name];
 
-    if (!data) {
+    if (!mapData) {
       layer.bindTooltip(
         `
         <div style="font-family:sans-serif; padding:6px">
@@ -158,30 +162,39 @@ const Map = () => {
         },
       );
 
+      layer.on({
+        click() {
+          const found = findProvince(name);
+
+          if (found && onProvinceClick) {
+            onProvinceClick(found);
+          }
+        },
+      });
+
       return;
     }
 
-    const riskColor = getColor(data.heatmapStatus);
+    const riskColor = getColor(mapData.heatmapStatus);
 
     layer.bindTooltip(
       `
       <div style="font-family:sans-serif; min-width:210px; padding:6px">
-
         <p style="font-weight:700; font-size:14px; margin:0 0 8px">
-          ${data.nama}
+          ${mapData.nama}
         </p>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Status:</span>
           <span style="font-weight:700; color:${riskColor}">
-            ${data.heatmapStatus}
+            ${mapData.heatmapStatus}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Index Risiko:</span>
           <span style="font-weight:700">
-            ${data.riskScore.toFixed(2)}
+            ${mapData.riskScore.toFixed(2)}
           </span>
         </div>
 
@@ -189,22 +202,22 @@ const Map = () => {
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Danger:</span>
-          <span style="font-weight:600">${data.countDanger}</span>
+          <span style="font-weight:600">${mapData.countDanger}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Warning:</span>
-          <span style="font-weight:600">${data.countWarning}</span>
+          <span style="font-weight:600">${mapData.countWarning}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Safe:</span>
-          <span style="font-weight:600">${data.countSafe}</span>
+          <span style="font-weight:600">${mapData.countSafe}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Total Data:</span>
-          <span style="font-weight:600">${data.totalData}</span>
+          <span style="font-weight:600">${mapData.totalData}</span>
         </div>
 
         <hr style="margin:6px 0"/>
@@ -212,17 +225,16 @@ const Map = () => {
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
           <span style="color:#6b7280">Total Alokasi:</span>
           <span style="font-weight:600">
-            ${formatCurrency(data.totalAlokasi)}
+            ${formatCurrency(mapData.totalAlokasi)}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px">
           <span style="color:#6b7280">Alokasi Final:</span>
           <span style="font-weight:600">
-            ${formatCurrency(data.totalAlokasiFinal)}
+            ${formatCurrency(mapData.totalAlokasiFinal)}
           </span>
         </div>
-
       </div>
       `,
       {
@@ -232,6 +244,14 @@ const Map = () => {
     );
 
     layer.on({
+      click() {
+        const found = findProvince(name);
+
+        if (found && onProvinceClick) {
+          onProvinceClick(found);
+        }
+      },
+
       mouseover(e) {
         e.target.setStyle({
           fillOpacity: 1,

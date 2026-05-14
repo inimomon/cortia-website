@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import { Link } from 'react-router-dom';
-import Navbar from '../components/ui/Navbar';
-import HeroHome from '../components/ui/HeroHome';
-import DynamicInjection from '../components/ui/DynamicInjection';
-import ChallengeSection from '../components/sections/ChallengeSection';
-import RiskPublicMapSection from '../components/sections/RiskPublicMapSection';
-import MissionSection from '../components/sections/MissionSection';
-import FinalCTA from '../components/ui/FinalCTA';
-import Footer from '../components/ui/Footer';
 import axios from "axios";
 import { Eye, History, BarChart3, Gavel, AlertOctagon } from "lucide-react";
+import { Link } from "react-router-dom";
+import Navbar from "../components/ui/Navbar";
+import HeroHome from "../components/ui/HeroHome";
+import DynamicInjection from "../components/ui/DynamicInjection";
+import ChallengeSection from "../components/sections/ChallengeSection";
+import RiskPublicMapSection from "../components/sections/RiskPublicMapSection";
+import MissionSection from "../components/sections/MissionSection";
+import FinalCTA from "../components/ui/FinalCTA";
+import Footer from "../components/ui/Footer";
+import { useState } from "react";
+import { useEffect } from "react";
 
 const challenges = [
   {
@@ -61,11 +62,10 @@ export default function HomePage() {
         setLoading(true);
 
         const response = await axios.get(
-          "http://localhost:8001/api/v1/riskMap/",
+          `${import.meta.env.VITE_BE_LINK}/riskMap/`,
         );
 
         setRiskData(response.data.data);
-
       } catch (err) {
         console.log(err);
 
@@ -87,6 +87,7 @@ export default function HomePage() {
       {/* Dynamic Injection */}
       <DynamicInjection />
 
+      {/* The Challenge */}
       <ChallengeSection
         challenges={challenges}
         imageUrl="https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200"
