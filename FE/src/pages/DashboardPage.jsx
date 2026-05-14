@@ -237,6 +237,7 @@ export default function DashboardPage() {
 
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
             <AggregateSummary stats={stats} />
+            {/* <AggregateSummary /> */}
 
             <div className="flex-1 border border-gray-200 rounded-xl p-5 bg-white flex flex-col">
               <p className="text-[10px] font-bold tracking-widest text-gray-400 mb-4 uppercase">
@@ -253,6 +254,7 @@ export default function DashboardPage() {
         </section>
 
         <BudgetSummary data={budgetStats} />
+        {/* <BudgetSummary /> */}
 
         <RiskMonitoringSection
           provinsiData={provinsiData}
@@ -261,6 +263,7 @@ export default function DashboardPage() {
           dotColor={dotColor}
           skorColor={skorColor}
         />
+        {/* <RiskMonitoringSection /> */}
 
         {selected && <ProvinceDetail selected={selected} />}
 

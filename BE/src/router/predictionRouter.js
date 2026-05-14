@@ -1,7 +1,14 @@
 const express = require("express");
+const {
+  getAllData,
+  getPredictionStats,
+  getProvinceSummaries,
+} = require("../controller/predictionController");
+
 const router = express.Router();
-const {getAllData, getPredictionStats} = require("../controller/predictionController");
 
 router.get("/", getAllData);
-router.get("/stats/:daerah", getPredictionStats);
-module.exports = router
+router.get("/summary", getProvinceSummaries);
+router.get("/prediction/stats/:daerah", getPredictionStats);
+
+module.exports = router;
