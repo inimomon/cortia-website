@@ -10,7 +10,7 @@ const RiskMonitoringSection = ({data, selected, setSelected}) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:8123/api/risk-map");
+        const response = await axios.get("http://localhost:8001/api/risk-map");
         if (response.data.success) {
           // Sort berdasarkan index_resiko tertinggi agar mirip desain
           const sortedData = response.data.data.sort((a, b) => b.index_resiko - a.index_resiko);
