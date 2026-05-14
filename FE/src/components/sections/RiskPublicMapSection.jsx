@@ -10,9 +10,7 @@ const RiskPublicMapSection = () => {
   useEffect(() => {
     const fetchTopRisks = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:8005/api/v1/riskMap",
-        );
+        const response = await axios.get(`${import.meta.env.VITE_BE_LINK}/riskMap`);
 
         if (!response.data.success) return;
 
@@ -31,7 +29,6 @@ const RiskPublicMapSection = () => {
           };
         });
 
-        // URUT BERDASARKAN INDEX RESIKO
         const sorted = mapped
           .sort((a, b) => b.riskScore - a.riskScore)
           .slice(0, 5);

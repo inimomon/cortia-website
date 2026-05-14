@@ -1,7 +1,7 @@
 // import package
 require("dotenv").config();
 const express = require("express");
-const { connectDB,sequelize } = require("./src/config/db");
+const { connectDB, sequelize } = require("./src/config/db");
 const cors = require("cors");
 // import model
 require("./src/model/Prediction");
@@ -10,7 +10,7 @@ require("./src/model/AuditHistory");
 require("./src/model/Transaction");
 
 // import router
-const predictionRouter = require("../BE/src/router/predictionRouter");
+const predictionRouter = require("./src/router/predictionRouter");
 const authRouter = require("./src/router/authRouter");
 const auditRouter = require("./src/router/auditRouter");
 const riskMapRouter = require("./src/router/riskMapRouter");

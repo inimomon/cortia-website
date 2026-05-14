@@ -75,9 +75,6 @@ const getRiskMap = async (req, res) => {
       const dangerRate = total > 0 ? danger / total : 0;
       const warningRate = total > 0 ? warning / total : 0;
       const safeRate = total > 0 ? safe / total : 0;
-
-      // Skor real berdasarkan persentase data
-      // high/danger lebih berat daripada warning
       const riskScore = (dangerRate * 0.7 + warningRate * 0.3) * 100;
 
       let status = "SAFE";
