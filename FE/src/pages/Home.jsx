@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import Navbar from '../ui/Navbar';
-import HeroHome from '../ui/HeroHome';
-import DynamicInjection from '../ui/DynamicInjection';
-import ChallengeSection from '../sections/ChallengeSection';
-import RiskPublicMapSection from '../sections/RiskPublicMapSection';
-import MissionSection from '../sections/MissionSection';
-import FinalCTA from '../ui/FinalCTA';
-import Footer from '../ui/Footer';
+import Navbar from '../components/ui/Navbar';
+import HeroHome from '../components/ui/HeroHome';
+import DynamicInjection from '../components/ui/DynamicInjection';
+import ChallengeSection from '../components/sections/ChallengeSection';
+import RiskPublicMapSection from '../components/sections/RiskPublicMapSection';
+import MissionSection from '../components/sections/MissionSection';
+import FinalCTA from '../components/ui/FinalCTA';
+import Footer from '../components/ui/Footer';
 
 import { Landmark, Eye, Handshake, History, BarChart3, Gavel, AlertOctagon } from 'lucide-react';
 
