@@ -3,8 +3,10 @@ const xlsx = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
 
 const AuditHistory = require('../model/AuditHistory');
+const Transaction = require('../model/Transaction');
 
 const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -370,8 +372,86 @@ const analyzeAudit = async (req, res) => {
   }
 };
 
+const getAudits = async (req, res) => {
+  try {
+    const { q, risk, page = 1, limit = 10 } = req.query;
+    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const where = { flow_type: FLOW_TYPE };
+    const txWhere = {};
+
+    if (q) {
+      txWhere[Op.or] = [
+        { tender_title: { [Op.like]: `%${q}%` } },
+        { award_title: { [Op.like]: `%${q}%` } },
+        { award_supplier: { [Op.like]: `%${q}%` } },
+        { nama_daerah: { [Op.like]: `%${q}%` } },
+      ];
+    }
+    if (risk && ['low', 'medium', 'high'].includes(String(risk).toLowerCase())) {
+      txWhere.risk_level = String(risk).toLowerCase();
+    }
+
+    if (Object.keys(txWhere).length > 0) {
+      const matchingTransactions = await Transaction.findAll({
+        where: txWhere,
+        attributes: ['audit_id'],
+        group: ['audit_id'],
+      });
+      const auditIds = matchingTransactions.map((item) => item.audit_id);
+      if (auditIds.length === 0) {
+        return res.json({ success: true, data: [], total: 0, page: parseInt(page, 10) });
+      }
+      where.id = { [Op.in]: auditIds };
+    }
+
+    const { count, rows } = await AuditHistory.findAndCountAll({
+      where,
+      order: [['id', 'DESC']],
+      limit: parseInt(limit, 10),
+      offset,
+    });
+
+    return res.json({ success: true, data: rows, total: count, page: parseInt(page, 10) });
+  } catch (error) {
+    console.error('List old error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getAuditDetail = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const audit = await AuditHistory.findByPk(id);
+    if (!audit || audit.flow_type !== FLOW_TYPE) {
+      return res.status(404).json({ success: false, message: 'Audit not found' });
+    }
+    const transactions = await Transaction.findAll({
+      where: { audit_id: id },
+      order: [['score', 'DESC']],
+    });
+    return res.json({ success: true, audit, transactions });
+  } catch (error) {
+    console.error('Detail old error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getTransactionDetail = async (req, res) => {
+  const { auditId, txId } = req.params;
+  try {
+    const transaction = await Transaction.findOne({ where: { audit_id: auditId, id: txId } });
+    if (!transaction) return res.status(404).json({ success: false, message: 'Transaction not found' });
+    return res.json({ success: true, transaction });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   uploadFile,
   downloadTemplate,
   analyzeAudit,
+  getAudits,
+  getAuditDetail,
+  getTransactionDetail,
 };

@@ -7,6 +7,7 @@ const { connectDB } = require("./src/config/db");
 require("./src/model/Prediction");
 require("./src/model/User");
 require("./src/model/AuditHistory");
+require("./src/model/Transaction");
 
 // import router
 const predictionRouter = require("../BE/src/router/predictionRouter");
