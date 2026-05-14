@@ -8,6 +8,7 @@ require("./src/model/Prediction");
 require("./src/model/User");
 require("./src/model/AuditHistory");
 require("./src/model/Transaction");
+require("./src/model/Riskmap");
 
 // import router
 const predictionRouter = require("./src/router/predictionRouter");

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/ui/Navbar';
 
-const API = 'http://localhost:8123/api/audit';
+const API = 'http://localhost:8123/api/v1/audit';
 
 const riskBadge = (level) => {
   const normalized = String(level || '').toLowerCase();

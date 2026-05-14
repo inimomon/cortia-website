@@ -53,7 +53,7 @@ const RegisterPage = () => {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:8005/api/v1/auth/register",
+        "http://localhost:8001/api/v1/auth/register",
         formData,
       );
       navigate("/login");
