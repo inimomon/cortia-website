@@ -1,6 +1,7 @@
 import React from "react";
 
 import LogoList from "./LogoList";
+import { Mail, Phone } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -82,8 +83,8 @@ const Footer = () => {
               </h3>
 
               <ul className="space-y-3 text-gray-600">
-                <li>[Icon Email] : contact@gmail.com</li>
-                <li>[Icon Kontak] : +62 8123 456 789</li>
+                <li className="flex items-center gap-2"><Mail className="size-5" /> : contact@gmail.com</li>
+                <li className="flex items-center gap-2"><Phone className="size-5" /> : +62 8123 456 789</li>
               </ul>
             </div>
 
