@@ -1,19 +1,14 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const {
-    uploadFile,
-    downloadTemplate,
-    analyzeAudit,
-    getAudits,
-    getAuditDetail,
-    getTransactionDetail,
-} = require('../controller/auditController');
 
-router.post('/upload', uploadFile);
-router.get('/template', downloadTemplate);
-router.post('/analyze', analyzeAudit);
-router.get('/', getAudits);
-router.get('/:id', getAuditDetail);
-router.get('/:auditId/transaction/:txId', getTransactionDetail);
+const auditController = require("../controller/auditController");
+
+router.post("/upload", auditController.uploadFile);
+router.post("/manual", auditController.analyzeManualInput);
+
+router.get("/", auditController.getAudits);
+router.get("/template", auditController.downloadTemplate);
+router.get("/:id", auditController.getAuditDetail);
+router.get("/:auditId/transaction/:txId", auditController.getTransactionDetail);
 
 module.exports = router;

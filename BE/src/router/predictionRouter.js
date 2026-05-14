@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.get("/", getAllData);
 router.get("/summary", getProvinceSummaries);
-router.get("/prediction/stats/:daerah", getPredictionStats);
+router.get("/stats/:daerah", getPredictionStats);
 
 module.exports = router;

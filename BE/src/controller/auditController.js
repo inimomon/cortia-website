@@ -1,15 +1,38 @@
-const multer = require('multer');
-const xlsx = require('xlsx');
-const path = require('path');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-const { Op } = require('sequelize');
+const multer = require("multer");
+const xlsx = require("xlsx");
+const path = require("path");
+const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
+const { Op } = require("sequelize");
 
-const AuditHistory = require('../model/AuditHistory');
-const Transaction = require('../model/Transaction');
+const AuditHistory = require("../model/AuditHistory");
+const Transaction = require("../model/Transaction");
 
-const uploadDir = path.join(__dirname, '../../uploads');
+const uploadDir = path.join(__dirname, "../../uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const FASTAPI_PREDICT_FILE_URL =
+  process.env.FASTAPI_PREDICT_FILE_URL ||
+  "http://127.0.0.1:8000/cortia/api/v1/predict_file";
+
+const FASTAPI_INPUT_TEXT_URL =
+  process.env.FASTAPI_INPUT_TEXT_URL ||
+  "http://127.0.0.1:8000/cortia/api/v1/input_text";
+
+const FASTAPI_TIMEOUT_MS = Number(process.env.FASTAPI_TIMEOUT_MS || 30000);
+const FLOW_TYPE = "audit";
+
+const REQUIRED_COLUMNS = [
+  "tender_title",
+  "tender_minvalue",
+  "award_value",
+  "award_date",
+  "days_to_award",
+  "mainprocurementcategory",
+  "award_title",
+  "award_supplier",
+  "nama_daerah",
+];
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
@@ -19,34 +42,36 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (_req, file, cb) => {
-  const allowed = ['.xlsx', '.csv'];
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (allowed.includes(ext)) cb(null, true);
-  else cb(new Error('Only .xlsx and .csv files are allowed'), false);
-};
-
 const upload = multer({
   storage,
-  fileFilter,
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if ([".xlsx", ".csv"].includes(ext)) cb(null, true);
+    else cb(new Error("Only .xlsx and .csv files are allowed"), false);
+  },
   limits: { fileSize: 10 * 1024 * 1024 },
-}).single('file');
+}).single("file");
 
-const FASTAPI_PREDICT_FILE_URL =
-  process.env.FASTAPI_DRAF_PREDICT_FILE_URL || 'http://127.0.0.1:8000/cortia/api/v1/predict_file';
-const FASTAPI_TIMEOUT_MS = parseInt(process.env.FASTAPI_TIMEOUT_MS || '15000', 10);
-const FLOW_TYPE = 'audit';
-const REQUIRED_COLUMNS = [
-  'tender_title',
-  'tender_minvalue',
-  'award_value',
-  'award_date',
-  'days_to_award',
-  'mainprocurementcategory',
-  'award_title',
-  'award_supplier',
-  'nama_daerah',
-];
+function formatAwardDate(value) {
+  if (!value && value !== 0) return "";
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  if (typeof value === "number") {
+    const parsed = xlsx.SSF.parse_date_code(value);
+    if (parsed) {
+      const date = new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  const date = new Date(value);
+  if (!Number.isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+
+  return "";
+}
 
 function parseFile(filePath) {
   const workbook = xlsx.readFile(filePath);
@@ -56,326 +81,523 @@ function parseFile(filePath) {
   return rows.map((row) => {
     const normalized = {};
     Object.keys(row).forEach((key) => {
-      normalized[key.toLowerCase().replace(/\s+/g, '_')] = row[key];
+      normalized[key.toLowerCase().replace(/\s+/g, "_")] = row[key];
     });
     return normalized;
   });
 }
 
-function formatAwardDate(value) {
-  if (!value && value !== 0) return '';
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
-  if (typeof value === 'number') {
-    const parsed = xlsx.SSF.parse_date_code(value);
-    if (parsed) {
-      const date = new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
-      return date.toISOString().slice(0, 10);
-    }
-  }
-  const date = new Date(value);
-  if (!Number.isNaN(date.getTime())) return date.toISOString().slice(0, 10);
-  return '';
-}
-
-function validateSchema(rows, explicitNamaDaerah) {
-  if (!rows.length) return { valid: false, message: 'File is empty' };
+function validateRows(rows, explicitNamaDaerah = "") {
+  if (!rows.length) return { valid: false, message: "File kosong" };
 
   const keys = new Set(rows.flatMap((row) => Object.keys(row)));
-  const missing = REQUIRED_COLUMNS.filter((column) => column !== 'nama_daerah' && !keys.has(column));
-  if (!explicitNamaDaerah && !keys.has('nama_daerah')) missing.push('nama_daerah');
-  if (missing.length) {
-    return { valid: false, message: `Missing required columns: ${missing.join(', ')}` };
+
+  const missing = REQUIRED_COLUMNS.filter(
+    (column) => column !== "nama_daerah" && !keys.has(column),
+  );
+
+  if (!explicitNamaDaerah && !keys.has("nama_daerah")) {
+    missing.push("nama_daerah");
   }
 
-  for (let index = 0; index < rows.length; index += 1) {
-    const row = rows[index];
-    const rowNumber = index + 2;
+  if (missing.length) {
+    return {
+      valid: false,
+      message: `Kolom wajib hilang: ${missing.join(", ")}`,
+    };
+  }
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNumber = i + 2;
     const namaDaerah = explicitNamaDaerah || row.nama_daerah;
 
-    if (!String(namaDaerah || '').trim()) {
-      return { valid: false, message: `Row ${rowNumber}: nama_daerah is required` };
+    if (!String(namaDaerah || "").trim()) {
+      return { valid: false, message: `Baris ${rowNumber}: nama_daerah wajib` };
     }
-    if (!String(row.tender_title || '').trim()) {
-      return { valid: false, message: `Row ${rowNumber}: tender_title is required` };
+
+    if (!String(row.tender_title || "").trim()) {
+      return {
+        valid: false,
+        message: `Baris ${rowNumber}: tender_title wajib`,
+      };
     }
+
     if (!formatAwardDate(row.award_date)) {
-      return { valid: false, message: `Row ${rowNumber}: award_date must be a valid date` };
+      return {
+        valid: false,
+        message: `Baris ${rowNumber}: award_date tidak valid`,
+      };
     }
 
-    const tenderMinvalue = Number(row.tender_minvalue);
-    if (!Number.isFinite(tenderMinvalue) || tenderMinvalue < 0) {
-      return { valid: false, message: `Row ${rowNumber}: tender_minvalue must be a valid number` };
-    }
-    const awardValue = Number(row.award_value);
-    if (!Number.isFinite(awardValue) || awardValue < 0) {
-      return { valid: false, message: `Row ${rowNumber}: award_value must be a valid number` };
-    }
-    const daysToAward = Number(row.days_to_award);
-    if (!Number.isInteger(daysToAward) || daysToAward < 0) {
-      return { valid: false, message: `Row ${rowNumber}: days_to_award must be a non-negative integer` };
+    if (!Number.isFinite(Number(row.tender_minvalue))) {
+      return {
+        valid: false,
+        message: `Baris ${rowNumber}: tender_minvalue tidak valid`,
+      };
     }
 
-    const requiredTextFields = ['mainprocurementcategory', 'award_title', 'award_supplier'];
-    const missingText = requiredTextFields.find((field) => !String(row[field] || '').trim());
-    if (missingText) {
-      return { valid: false, message: `Row ${rowNumber}: ${missingText} is required` };
+    if (!Number.isFinite(Number(row.award_value))) {
+      return {
+        valid: false,
+        message: `Baris ${rowNumber}: award_value tidak valid`,
+      };
+    }
+
+    if (!Number.isInteger(Number(row.days_to_award))) {
+      return {
+        valid: false,
+        message: `Baris ${rowNumber}: days_to_award harus angka bulat`,
+      };
+    }
+
+    for (const field of [
+      "mainprocurementcategory",
+      "award_title",
+      "award_supplier",
+    ]) {
+      if (!String(row[field] || "").trim()) {
+        return { valid: false, message: `Baris ${rowNumber}: ${field} wajib` };
+      }
     }
   }
 
   return { valid: true };
 }
 
-function resolveNamaDaerah(rows, explicitNamaDaerah) {
+function validateManual(body) {
+  const missing = REQUIRED_COLUMNS.find(
+    (column) => !String(body[column] || "").trim(),
+  );
+
+  if (missing) return { valid: false, message: `${missing} wajib diisi` };
+
+  if (!formatAwardDate(body.award_date)) {
+    return { valid: false, message: "award_date tidak valid" };
+  }
+
+  if (!Number.isFinite(Number(body.tender_minvalue))) {
+    return { valid: false, message: "tender_minvalue tidak valid" };
+  }
+
+  if (!Number.isFinite(Number(body.award_value))) {
+    return { valid: false, message: "award_value tidak valid" };
+  }
+
+  if (!Number.isInteger(Number(body.days_to_award))) {
+    return { valid: false, message: "days_to_award harus angka bulat" };
+  }
+
+  return { valid: true };
+}
+
+function resolveNamaDaerah(rows, explicitNamaDaerah = "") {
   if (explicitNamaDaerah) return String(explicitNamaDaerah).trim();
-  const values = [...new Set(rows.map((row) => String(row.nama_daerah || '').trim()).filter(Boolean))];
-  if (values.length !== 1) throw new Error('Uploaded data must contain exactly one nama_daerah value');
-  return values[0];
+
+  const unique = [
+    ...new Set(
+      rows.map((row) => String(row.nama_daerah || "").trim()).filter(Boolean),
+    ),
+  ];
+
+  if (unique.length !== 1) {
+    throw new Error("File harus memiliki tepat 1 nama_daerah");
+  }
+
+  return unique[0];
 }
 
 function sanitizeRows(rows, namaDaerah) {
   return rows.map((row) => ({
-    tender_title: String(row.tender_title || '').trim(),
+    tender_title: String(row.tender_title || "").trim(),
     tender_minvalue: Number(row.tender_minvalue),
     award_value: Number(row.award_value),
     award_date: formatAwardDate(row.award_date),
     days_to_award: Number(row.days_to_award),
-    mainprocurementcategory: String(row.mainprocurementcategory || '').trim(),
-    award_title: String(row.award_title || '').trim(),
-    award_supplier: String(row.award_supplier || '').trim(),
+    mainprocurementcategory: String(row.mainprocurementcategory || "").trim(),
+    award_title: String(row.award_title || "").trim(),
+    award_supplier: String(row.award_supplier || "").trim(),
     nama_daerah: namaDaerah,
   }));
 }
 
+function sanitizeManual(body) {
+  const namaDaerah = String(body.nama_daerah || "").trim();
+
+  return {
+    daerah: namaDaerah,
+    nama_daerah: namaDaerah,
+    tender_title: String(body.tender_title || "").trim(),
+    tender_minvalue: Number(body.tender_minvalue),
+    award_value: Number(body.award_value),
+    award_date: formatAwardDate(body.award_date),
+    days_to_award: Number(body.days_to_award),
+    mainprocurementcategory: String(body.mainprocurementcategory || "").trim(),
+    award_title: String(body.award_title || "").trim(),
+    award_supplier: String(body.award_supplier || "").trim(),
+  };
+}
+
 function csvEscape(value) {
-  const stringValue = value === null || value === undefined ? '' : String(value);
-  return `"${stringValue.replace(/"/g, '""')}"`;
+  const str = value === null || value === undefined ? "" : String(value);
+  return `"${str.replace(/"/g, '""')}"`;
 }
 
-function buildPredictionCsv(rows) {
-  const body = rows.map((row) => REQUIRED_COLUMNS.map((header) => csvEscape(row[header])).join(','));
-  return [REQUIRED_COLUMNS.join(','), ...body].join('\n');
+function buildCsv(rows) {
+  const body = rows.map((row) =>
+    REQUIRED_COLUMNS.map((col) => csvEscape(row[col])).join(","),
+  );
+
+  return [REQUIRED_COLUMNS.join(","), ...body].join("\n");
 }
 
-async function requestFastApiPrediction(namaDaerah, rows, auditId) {
+async function readFastApiResponse(response) {
+  const text = await response.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return { detail: text || "Invalid FastAPI response" };
+  }
+}
+
+async function fetchWithTimeout(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FASTAPI_TIMEOUT_MS);
 
   try {
-    const form = new FormData();
-    form.append('daerah', namaDaerah);
-    form.append('nama_daerah', namaDaerah);
-    if (auditId !== undefined && auditId !== null) form.append('audit_id', String(auditId));
-    form.append('file', new Blob([buildPredictionCsv(rows)], { type: 'text/csv' }), 'audit_old_rows.csv');
-
-    const response = await fetch(FASTAPI_PREDICT_FILE_URL, {
-      method: 'POST',
-      body: form,
+    return await fetch(url, {
+      ...options,
       signal: controller.signal,
     });
-
-    const rawText = await response.text();
-    let data;
-    try {
-      data = rawText ? JSON.parse(rawText) : {};
-    } catch {
-      data = { detail: rawText || 'Invalid response from FastAPI service' };
-    }
-
-    if (!response.ok) {
-      const error = new Error(
-        data.detail || data.message || `FastAPI request failed with status ${response.status}`
-      );
-      error.statusCode = response.status;
-      throw error;
-    }
-
-    return data;
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      const timeoutError = new Error('FastAPI prediction request timed out');
-      timeoutError.statusCode = 504;
-      throw timeoutError;
-    }
-    if (error.cause?.code === 'ECONNREFUSED' || error.code === 'ECONNREFUSED') {
-      const unavailableError = new Error('FastAPI prediction service is unavailable');
-      unavailableError.statusCode = 503;
-      throw unavailableError;
-    }
-    throw error;
   } finally {
     clearTimeout(timeout);
   }
 }
 
-function summarisePredictionResults(results) {
+async function requestFastApiInputText(payload) {
+  const response = await fetchWithTimeout(FASTAPI_INPUT_TEXT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await readFastApiResponse(response);
+
+  if (!response.ok) {
+    const message =
+      typeof data.detail === "string"
+        ? data.detail
+        : data.detail?.message || data.message || "FastAPI input_text gagal";
+
+    const error = new Error(message);
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+async function requestFastApiPredictFile(namaDaerah, rows, auditId) {
+  const form = new FormData();
+
+  form.append("daerah", namaDaerah);
+  form.append("nama_daerah", namaDaerah);
+  form.append("audit_id", String(auditId));
+
+  form.append(
+    "file",
+    new Blob([buildCsv(rows)], { type: "text/csv" }),
+    "audit_rows.csv",
+  );
+
+  const response = await fetchWithTimeout(FASTAPI_PREDICT_FILE_URL, {
+    method: "POST",
+    body: form,
+  });
+
+  const data = await readFastApiResponse(response);
+
+  if (!response.ok) {
+    const message =
+      typeof data.detail === "string"
+        ? data.detail
+        : data.detail?.message || data.message || "FastAPI predict_file gagal";
+
+    const error = new Error(message);
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+function summarize(results) {
   return results.reduce(
-    (summary, item) => {
-      const level = String(item.risk_level || '').toLowerCase();
-      if (level === 'high') summary.high_risk += 1;
-      else if (level === 'medium') summary.medium_risk += 1;
-      else summary.low_risk += 1;
-      return summary;
+    (acc, item) => {
+      const level = String(item.risk_level || "").toLowerCase();
+
+      if (level === "high") acc.high_risk += 1;
+      else if (level === "medium") acc.medium_risk += 1;
+      else acc.low_risk += 1;
+
+      return acc;
     },
-    { high_risk: 0, medium_risk: 0, low_risk: 0, total_processed: results.length }
+    {
+      high_risk: 0,
+      medium_risk: 0,
+      low_risk: 0,
+      total_processed: results.length,
+    },
   );
 }
 
-//untuk upload file input dari user bukan input kasar
+async function insertTransactions(auditId, namaDaerah, rows, results) {
+  const transactionRows = results.map((item, index) => {
+    const original = rows[index];
+
+    return {
+      audit_id: auditId,
+      nama_daerah: namaDaerah,
+
+      tender_title: original.tender_title,
+      tender_minvalue: original.tender_minvalue,
+      award_value: original.award_value,
+      award_date: original.award_date,
+      days_to_award: original.days_to_award,
+      mainprocurementcategory: original.mainprocurementcategory,
+      award_title: original.award_title,
+      award_supplier: original.award_supplier,
+
+      score: item.score,
+      risk_level: item.risk_level,
+      explanation: item.explanation,
+    };
+  });
+
+  await Transaction.bulkCreate(transactionRows);
+}
+
 const uploadFile = (req, res) => {
   upload(req, res, async (err) => {
-    if (err instanceof multer.MulterError) return res.status(400).json({ success: false, message: err.message });
-    if (err) return res.status(400).json({ success: false, message: err.message });
-    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+    let audit = null;
+
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "File belum diupload",
+      });
+    }
 
     try {
       const rows = parseFile(req.file.path);
-      const explicitNamaDaerah = req.body?.nama_daerah ? String(req.body.nama_daerah).trim() : '';
-      const validation = validateSchema(rows, explicitNamaDaerah);
+
+      const explicitNamaDaerah = req.body?.nama_daerah
+        ? String(req.body.nama_daerah).trim()
+        : "";
+
+      const validation = validateRows(rows, explicitNamaDaerah);
 
       if (!validation.valid) {
-        fs.unlinkSync(req.file.path);
-        return res.status(422).json({ success: false, message: validation.message });
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+        return res.status(422).json({
+          success: false,
+          message: validation.message,
+        });
       }
 
-      const audit = await AuditHistory.create({
-        file_id: path.basename(req.file.path, path.extname(req.file.path)),
+      const namaDaerah = resolveNamaDaerah(rows, explicitNamaDaerah);
+      const sanitizedRows = sanitizeRows(rows, namaDaerah);
+
+      audit = await AuditHistory.create({
+        file_id: `upload_${Date.now()}`,
         filename: req.file.originalname,
-        total_rows: rows.length,
-        status: 'pending',
+        total_rows: sanitizedRows.length,
+        status: "processing",
         flow_type: FLOW_TYPE,
       });
 
-      const newPath = path.join(uploadDir, `audit_old_${audit.id}${path.extname(req.file.path)}`);
-      fs.renameSync(req.file.path, newPath);
-      await AuditHistory.update({ file_id: `audit_old_${audit.id}` }, { where: { id: audit.id } });
+      const fastApiResult = await requestFastApiPredictFile(
+        namaDaerah,
+        sanitizedRows,
+        audit.id,
+      );
+
+      if (!Array.isArray(fastApiResult.results)) {
+        throw new Error("FastAPI tidak mengembalikan results array");
+      }
+
+      await insertTransactions(
+        audit.id,
+        namaDaerah,
+        sanitizedRows,
+        fastApiResult.results,
+      );
+
+      const summary = summarize(fastApiResult.results);
+
+      await AuditHistory.update(
+        {
+          status: "completed",
+          total_rows: summary.total_processed,
+          high_risk: summary.high_risk,
+          medium_risk: summary.medium_risk,
+          low_risk: summary.low_risk,
+        },
+        { where: { id: audit.id } },
+      );
+
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
       return res.json({
         success: true,
-        fileId: `audit_old_${audit.id}`,
+        source: "predict_file",
         auditId: audit.id,
-        rows: rows.length,
         filename: req.file.originalname,
+        rows: summary.total_processed,
+        summary,
+        results: fastApiResult.results,
       });
     } catch (error) {
-      console.error('Upload old error:', error);
-      return res.status(500).json({ success: false, message: 'Server error during upload' });
+      console.error("UPLOAD ANALYZE ERROR:", error);
+
+      if (audit?.id) {
+        await AuditHistory.update(
+          { status: "failed" },
+          { where: { id: audit.id } },
+        ).catch(() => {});
+      }
+
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message,
+      });
     }
   });
 };
 
-//contoh dummy untuk user (ttemplate contoh dalam xlsx)
+const analyzeManualInput = async (req, res) => {
+  try {
+    const validation = validateManual(req.body);
+
+    if (!validation.valid) {
+      return res.status(422).json({
+        success: false,
+        message: validation.message,
+      });
+    }
+
+    const payload = sanitizeManual(req.body);
+    const result = await requestFastApiInputText(payload);
+
+    const riskLevel = String(result.risk_level || "low").toLowerCase();
+
+    const summary = {
+      high_risk: riskLevel === "high" ? 1 : 0,
+      medium_risk: riskLevel === "medium" ? 1 : 0,
+      low_risk: riskLevel === "low" ? 1 : 0,
+      total_processed: 1,
+    };
+
+    const audit = await AuditHistory.create({
+      file_id: `manual_${Date.now()}`,
+      filename: "Manual Input",
+      total_rows: 1,
+      status: "completed",
+      flow_type: FLOW_TYPE,
+      high_risk: summary.high_risk,
+      medium_risk: summary.medium_risk,
+      low_risk: summary.low_risk,
+    });
+
+    await Transaction.create({
+      audit_id: audit.id,
+      nama_daerah: payload.nama_daerah,
+
+      tender_title: payload.tender_title,
+      tender_minvalue: payload.tender_minvalue,
+      award_value: payload.award_value,
+      award_date: payload.award_date,
+      days_to_award: payload.days_to_award,
+      mainprocurementcategory: payload.mainprocurementcategory,
+      award_title: payload.award_title,
+      award_supplier: payload.award_supplier,
+
+      score: result.score,
+      risk_level: result.risk_level,
+      explanation: result.explanation,
+    });
+
+    return res.json({
+      success: true,
+      source: "input_text",
+      auditId: audit.id,
+      result,
+      summary,
+    });
+  } catch (error) {
+    console.error("Manual input error:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 const downloadTemplate = (_req, res) => {
   const workbook = xlsx.utils.book_new();
+
   const sampleData = [
     {
-      tender_title: 'Jasa Eo Pemilihan Abang Dan None Jakarta Selatan Tahun 2023',
+      nama_daerah: "DKI Jakarta",
+      tender_title:
+        "Jasa EO Pemilihan Abang Dan None Jakarta Selatan Tahun 2023",
       tender_minvalue: 1252306428.2,
-      award_value: 1145627700.0,
-      award_date: '2023-04-14',
+      award_value: 1145627700,
+      award_date: "2023-04-14",
       days_to_award: 11,
-      mainprocurementcategory: 'Services',
-      award_title: 'Jasa Eo Pemilihan Abang Dan None Jakarta Selatan Tahun 2023',
-      award_supplier: 'Pt. Ishana Abyakta Indonesia',
-      nama_daerah: 'dki_jakarta_127',
-    },
-    {
-      tender_title: 'Pengadaan Perangkat Jaringan Data Pemerintah Kota',
-      tender_minvalue: 875000000.0,
-      award_value: 842500000.0,
-      award_date: '2023-05-02',
-      days_to_award: 19,
-      mainprocurementcategory: 'Goods',
-      award_title: 'Kontrak Pengadaan Perangkat Jaringan Data Pemerintah Kota',
-      award_supplier: 'PT Nusantara Teknologi Infrastruktur',
-      nama_daerah: 'dki_jakarta_127',
+      mainprocurementcategory: "Services",
+      award_title:
+        "Jasa EO Pemilihan Abang Dan None Jakarta Selatan Tahun 2023",
+      award_supplier: "PT Ishana Abyakta Indonesia",
     },
   ];
 
   const worksheet = xlsx.utils.json_to_sheet(sampleData);
-  worksheet['!cols'] = [
-    { wch: 45 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
-    { wch: 24 }, { wch: 45 }, { wch: 30 }, { wch: 18 },
-  ];
-  xlsx.utils.book_append_sheet(workbook, worksheet, 'Template');
-  const buffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Template");
 
-  res.setHeader('Content-Disposition', 'attachment; filename="audit_old_template.xlsx"');
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="audit_old_template.xlsx"',
+  );
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+
   res.send(buffer);
-};
-
-// clean data from user input, panggil fastapi 
-const analyzeAudit = async (req, res) => {
-  const { auditId } = req.body;
-  if (!auditId) return res.status(400).json({ success: false, message: 'auditId is required' });
-
-  try {
-    const audit = await AuditHistory.findByPk(auditId);
-    if (!audit || audit.flow_type !== FLOW_TYPE) {
-      return res.status(404).json({ success: false, message: 'Audit not found' });
-    }
-    if (audit.status === 'processing') {
-      return res.status(409).json({ success: false, message: 'Analysis already in progress' });
-    }
-    if (audit.status === 'completed') {
-      return res.status(409).json({ success: false, message: 'This file has already been analyzed' });
-    }
-
-    await AuditHistory.update({ status: 'processing' }, { where: { id: auditId } });
-
-    const ext = ['.xlsx', '.csv'].find((candidate) =>
-      fs.existsSync(path.join(uploadDir, `audit_old_${auditId}${candidate}`))
-    );
-    if (!ext) {
-      await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } });
-      return res.status(404).json({ success: false, message: 'Uploaded file not found on server' });
-    }
-
-    const rows = parseFile(path.join(uploadDir, `audit_old_${auditId}${ext}`));
-    const validation = validateSchema(rows);
-    if (!validation.valid) {
-      await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } });
-      return res.status(422).json({ success: false, message: validation.message });
-    }
-
-    const namaDaerah = resolveNamaDaerah(rows);
-    const sanitizedRows = sanitizeRows(rows, namaDaerah);
-    const predictionResponse = await requestFastApiPrediction(namaDaerah, sanitizedRows, auditId);
-    if (!Array.isArray(predictionResponse.results)) {
-      throw new Error('FastAPI response does not contain a results array');
-    }
-
-    const summary = summarisePredictionResults(predictionResponse.results);
-
-    await AuditHistory.update(
-      {
-        status: 'completed',
-        total_rows: summary.total_processed,
-        high_risk: summary.high_risk,
-        medium_risk: summary.medium_risk,
-        low_risk: summary.low_risk,
-      },
-      { where: { id: auditId } }
-    );
-
-    return res.json({
-      success: true,
-      status: predictionResponse.status || 'success',
-      total_processed: summary.total_processed,
-      results: predictionResponse.results,
-      summary,
-    });
-  } catch (error) {
-    console.error('Analyze old error:', error);
-    await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } }).catch(() => {});
-    return res.status(error.statusCode || 500).json({ success: false, message: error.message });
-  }
 };
 
 const getAudits = async (req, res) => {
   try {
     const { q, risk, page = 1, limit = 10 } = req.query;
-    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+
+    const offset = (Number(page) - 1) * Number(limit);
     const where = { flow_type: FLOW_TYPE };
     const txWhere = {};
 
@@ -387,70 +609,149 @@ const getAudits = async (req, res) => {
         { nama_daerah: { [Op.like]: `%${q}%` } },
       ];
     }
-    if (risk && ['low', 'medium', 'high'].includes(String(risk).toLowerCase())) {
-      txWhere.risk_level = String(risk).toLowerCase();
+
+    if (risk && ["low", "medium", "high"].includes(String(risk))) {
+      txWhere.risk_level = String(risk);
     }
 
     if (Object.keys(txWhere).length > 0) {
-      const matchingTransactions = await Transaction.findAll({
+      const txs = await Transaction.findAll({
         where: txWhere,
-        attributes: ['audit_id'],
-        group: ['audit_id'],
+        attributes: ["audit_id"],
+        group: ["audit_id"],
       });
-      const auditIds = matchingTransactions.map((item) => item.audit_id);
-      if (auditIds.length === 0) {
-        return res.json({ success: true, data: [], total: 0, page: parseInt(page, 10) });
+
+      const auditIds = txs.map((item) => item.audit_id);
+
+      if (!auditIds.length) {
+        return res.json({
+          success: true,
+          data: [],
+          total: 0,
+          page: Number(page),
+        });
       }
+
       where.id = { [Op.in]: auditIds };
     }
 
     const { count, rows } = await AuditHistory.findAndCountAll({
       where,
-      order: [['id', 'DESC']],
-      limit: parseInt(limit, 10),
+      order: [["id", "DESC"]],
+      limit: Number(limit),
       offset,
     });
 
-    return res.json({ success: true, data: rows, total: count, page: parseInt(page, 10) });
+    const auditIds = rows.map((item) => item.id);
+
+    const firstTransactions = await Transaction.findAll({
+      where: {
+        audit_id: {
+          [Op.in]: auditIds,
+        },
+      },
+      attributes: ["id", "audit_id"],
+      order: [["id", "DESC"]],
+    });
+
+    const transactionMap = {};
+
+    firstTransactions.forEach((tx) => {
+      if (!transactionMap[tx.audit_id]) {
+        transactionMap[tx.audit_id] = tx.id;
+      }
+    });
+
+    const formatted = rows.map((item) => {
+      const json = item.toJSON();
+
+      return {
+        ...json,
+        transaction_id: transactionMap[json.id] || null,
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: formatted,
+      total: count,
+      page: Number(page),
+    });
   } catch (error) {
-    console.error('List old error:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("List old error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
 const getAuditDetail = async (req, res) => {
   const { id } = req.params;
+
   try {
-    const audit = await AuditHistory.findByPk(id);
-    if (!audit || audit.flow_type !== FLOW_TYPE) {
-      return res.status(404).json({ success: false, message: 'Audit not found' });
+    const transaction = await Transaction.findByPk(id);
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction tidak ditemukan",
+      });
     }
-    const transactions = await Transaction.findAll({
-      where: { audit_id: id },
-      order: [['score', 'DESC']],
+
+    return res.json({
+      success: true,
+      audit: {
+        id: transaction.audit_id,
+        transaction_id: transaction.id,
+      },
+      transactions: [transaction],
     });
-    return res.json({ success: true, audit, transactions });
   } catch (error) {
-    console.error('Detail old error:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Detail transaction error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
 const getTransactionDetail = async (req, res) => {
   const { auditId, txId } = req.params;
+
   try {
-    const transaction = await Transaction.findOne({ where: { audit_id: auditId, id: txId } });
-    if (!transaction) return res.status(404).json({ success: false, message: 'Transaction not found' });
-    return res.json({ success: true, transaction });
+    const transaction = await Transaction.findOne({
+      where: {
+        audit_id: auditId,
+        id: txId,
+      },
+    });
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction tidak ditemukan",
+      });
+    }
+
+    return res.json({
+      success: true,
+      transaction,
+    });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
 module.exports = {
   uploadFile,
+  analyzeManualInput,
   downloadTemplate,
-  analyzeAudit,
   getAudits,
   getAuditDetail,
   getTransactionDetail,
