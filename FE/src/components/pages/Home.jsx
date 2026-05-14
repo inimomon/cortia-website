@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import Navbar from '../ui/Navbar';
 import HeroHome from '../ui/HeroHome';
+import DynamicInjection from '../ui/DynamicInjection';
 import ChallengeSection from '../sections/ChallengeSection';
 import RiskPublicMapSection from '../sections/RiskPublicMapSection';
 import MissionSection from '../sections/MissionSection';
@@ -49,6 +50,9 @@ export default function HomePage() {
 
       {/* Hero */}
       <HeroHome />
+
+      {/* Dynamic Injection */}
+      <DynamicInjection />
 
       {/* The Challenge */}
       <ChallengeSection 
