@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import HeroDashboard from "../components/ui/HeroDashboard";
 import AggregateSummary from "../components/cards/AgregatSummary";
@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [statusData, setStatusData] = useState([]);
   const [budgetStats, setBudgetStats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRiskMap = async () => {
@@ -273,18 +274,27 @@ export default function DashboardPage() {
               Daftar Anggaran Daerah
             </h2>
 
-            <button className="text-sm text-teal-600 hover:text-teal-800 font-medium">
+            <button
+              onClick={() => navigate("/explore")}
+              className="text-sm text-teal-600 hover:text-teal-800 font-medium"
+            >
               View All Budgets
             </button>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
             {provinsiData.slice(0, 3).map((p) => (
-              <RegionalBudgetCard
+              <div
                 key={p.name}
-                province={p}
-                skorColor={skorColor}
-              />
+                onClick={() =>
+                  navigate(
+                    `/detail-prov/${p.name.toLowerCase().replace(/\s+/g, "-")}`,
+                  )
+                }
+                className="cursor-pointer"
+              >
+                <RegionalBudgetCard province={p} skorColor={skorColor} />
+              </div>
             ))}
           </div>
         </section>

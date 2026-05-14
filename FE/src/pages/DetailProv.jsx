@@ -64,6 +64,7 @@ const formatShortCurrency = (value) => {
 
 export default function DetailProv() {
   const { id } = useParams();
+
   const navigate = useNavigate();
 
   const [detail, setDetail] = useState(null);
@@ -89,7 +90,7 @@ export default function DetailProv() {
         );
 
         const projectResponse = await axios.get(
-          `${import.meta.env.VITE_BE_LINK}/prediction`,
+          `${import.meta.env.VITE_BE_LINK}/transaction/projects/${provinceName}`,
         );
 
         if (!summaryResponse.data.success) {
@@ -102,9 +103,16 @@ export default function DetailProv() {
           return;
         }
 
+        if (!projectResponse.data.success) {
+          setError("Data proyek gagal dimuat.");
+          return;
+        }
+
         const summaryData = summaryResponse.data.data || [];
+
         const riskMapData = riskMapResponse.data.data || [];
-        const projectData = projectResponse.data || [];
+
+        const projectData = projectResponse.data.data || [];
 
         const summary = summaryData.find(
           (item) =>
@@ -124,33 +132,36 @@ export default function DetailProv() {
             normalizeText(item.daerah) === normalizeText(provinceName),
         );
 
-        const filteredProjects = projectData
-          .filter(
-            (item) =>
-              normalizeText(item.daerah) === normalizeText(summary.daerah) ||
-              normalizeText(item.daerah) === normalizeText(provinceName),
-          )
-          .slice(0, 5);
+        const filteredProjects = projectData.slice(0, 5);
 
         const heatStatus = risk?.heatmap_status || "SAFE";
 
         const merged = {
           ...summary,
+
           skorRisiko: Number(risk?.index_resiko || 0),
+
           totalData: Number(risk?.total_data || summary.totalProyek || 0),
+
           danger: Number(risk?.count_danger || 0),
+
           warning: Number(risk?.count_warning || 0),
+
           safe: Number(risk?.count_safe || 0),
+
           totalAlokasi: Number(
             risk?.total_alokasi || summary.totalAnggaran || 0,
           ),
+
           totalAlokasiFinal: Number(risk?.total_alokasi_final || 0),
+
           status:
             heatStatus === "DANGER"
               ? "KRITIS"
               : heatStatus === "WARNING"
                 ? "ANOMALI"
                 : "STABIL",
+
           heatStatus,
         };
 
@@ -158,7 +169,9 @@ export default function DetailProv() {
         setProjects(filteredProjects);
       } catch (err) {
         console.error("DETAIL PROVINCE ERROR:", err);
+
         setError("Detail provinsi belum bisa diakses dari backend.");
+
         setDetail(null);
       } finally {
         setLoading(false);
@@ -172,6 +185,7 @@ export default function DetailProv() {
     return (
       <div className="pt-20 min-h-screen bg-slate-50">
         <Navbar variant="internal" />
+
         <div className="max-w-7xl mx-auto px-6 py-20 text-center text-slate-500">
           Memuat detail provinsi...
         </div>
@@ -274,6 +288,7 @@ export default function DetailProv() {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
+            {/* CATEGORY */}
             <section className="border border-gray-200 rounded-xl p-5">
               <h2 className="font-bold text-slate-900 mb-4">
                 Alokasi per Category
@@ -285,6 +300,7 @@ export default function DetailProv() {
                     <div key={item.name}>
                       <div className="flex items-center justify-between text-sm mb-2">
                         <span className="text-gray-600">{item.name}</span>
+
                         <span className="font-bold text-slate-900">
                           {item.percentage}%
                         </span>
@@ -293,7 +309,9 @@ export default function DetailProv() {
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-slate-900 rounded-full"
-                          style={{ width: `${item.percentage}%` }}
+                          style={{
+                            width: `${item.percentage}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -304,16 +322,21 @@ export default function DetailProv() {
               </div>
             </section>
 
+            {/* RISK */}
             <section className="border border-gray-200 rounded-xl p-5">
               <h2 className="font-bold text-slate-900 mb-4">Sebaran Risiko</h2>
 
               <InfoRow label="Danger" value={detail.danger} danger />
+
               <InfoRow label="Warning" value={detail.warning} warning />
+
               <InfoRow label="Safe" value={detail.safe} />
+
               <InfoRow label="Total Data" value={detail.totalData} />
             </section>
           </div>
 
+          {/* PROJECT TABLE */}
           <section className="mt-8 border border-gray-300 bg-white">
             <div className="flex items-center justify-between px-7 py-5 border-b border-gray-300">
               <h2 className="text-2xl font-bold text-black">
@@ -322,6 +345,7 @@ export default function DetailProv() {
 
               <div className="flex items-center gap-5 text-slate-700">
                 <button className="text-lg">≡</button>
+
                 <button className="text-lg">⇩</button>
               </div>
             </div>
@@ -333,15 +357,19 @@ export default function DetailProv() {
                     <th className="px-7 py-4 text-[11px] font-bold tracking-widest text-slate-600 uppercase">
                       Nama Proyek
                     </th>
+
                     <th className="px-7 py-4 text-[11px] font-bold tracking-widest text-slate-600 uppercase">
                       Kategori
                     </th>
+
                     <th className="px-7 py-4 text-[11px] font-bold tracking-widest text-slate-600 uppercase">
                       Alokasi
                     </th>
+
                     <th className="px-7 py-4 text-[11px] font-bold tracking-widest text-slate-600 uppercase">
                       Status
                     </th>
+
                     <th className="px-7 py-4 text-[11px] font-bold tracking-widest text-slate-600 uppercase">
                       Detail
                     </th>
@@ -379,12 +407,16 @@ export default function DetailProv() {
                           </td>
 
                           <td className="px-7 py-5 text-slate-600">
-                            {project.category || "Tanpa Kategori"}
+                            {project.mainprocurementcategory ||
+                              project.category ||
+                              "Tanpa Kategori"}
                           </td>
 
                           <td className="px-7 py-5 font-bold text-slate-900">
                             {formatShortCurrency(
-                              project.harga_final || project.harga_awal,
+                              project.award_value ||
+                                project.harga_final ||
+                                project.tender_minvalue,
                             )}
                           </td>
 
@@ -397,7 +429,12 @@ export default function DetailProv() {
                           </td>
 
                           <td className="px-7 py-5">
-                            <button className="text-xs font-bold text-black uppercase hover:underline">
+                            <button
+                              className="text-xs font-bold text-black uppercase hover:underline"
+                              onClick={() =>
+                                navigate(`/audit/${project.id}`)
+                              }
+                            >
                               Lihat Detail
                             </button>
                           </td>

@@ -30,7 +30,7 @@ const LoginPage = () => {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:8001/api/v1/auth/login",
+        `${import.meta.env.VITE_BE_LINK}/auth/login`,
         formData,
       );
 

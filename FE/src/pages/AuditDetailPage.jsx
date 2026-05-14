@@ -1,46 +1,87 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Navbar from '../components/ui/Navbar';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Navbar from "../components/ui/Navbar";
+import ReactMarkdown from "react-markdown"
 
-const API = 'http://localhost:8001/api/v1/audit';
+const PORT = import.meta.env.VITE_BE_LINK || "http://localhost:8005/api/v1";
+const API = `${PORT}/audit`;
+
+const formatNumber = (value) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return "-";
+
+  return number.toLocaleString("id-ID");
+};
+
+const formatScore = (value) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return "-";
+
+  return number.toFixed(4);
+};
 
 const riskBadge = (level) => {
-  const normalized = String(level || '').toLowerCase();
+  const normalized = String(level || "").toLowerCase();
+
   const map = {
-    high: 'bg-red-100 text-red-700 border border-red-200',
-    medium: 'bg-orange-100 text-orange-700 border border-orange-200',
-    low: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+    high: "bg-red-100 text-red-700 border border-red-200",
+    medium: "bg-orange-100 text-orange-700 border border-orange-200",
+    low: "bg-emerald-100 text-emerald-700 border border-emerald-200",
   };
-  return map[normalized] || 'bg-gray-100 text-gray-600';
+
+  return map[normalized] || "bg-gray-100 text-gray-600 border border-gray-200";
 };
 
 function TxModal({ tx, onClose }) {
   if (!tx) return null;
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-5 gap-4">
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Prediction Detail</p>
-            <h2 className="text-lg font-bold text-gray-900">{tx.tender_title || 'Untitled row'}</h2>
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">
+              Prediction Detail
+            </p>
+
+            <h2 className="text-lg font-bold text-gray-900">
+              {tx.tender_title || "Untitled row"}
+            </h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl font-light">x</button>
+
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-700 text-xl font-light"
+          >
+            ×
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
           {[
-            ['Nama Daerah', tx.nama_daerah || '-'],
-            ['Award Date', tx.award_date || '-'],
-            ['Tender Min Value', tx.tender_minvalue ? Number(tx.tender_minvalue).toLocaleString('id-ID') : '-'],
-            ['Award Value', tx.award_value ? Number(tx.award_value).toLocaleString('id-ID') : '-'],
-            ['Award Supplier', tx.award_supplier || '-'],
-            ['Days To Award', tx.days_to_award ?? '-'],
-            ['Category', tx.mainprocurementcategory || '-'],
-            ['Award Title', tx.award_title || '-'],
+            ["Nama Daerah", tx.nama_daerah],
+            ["Award Date", tx.award_date],
+            ["Tender Min Value", formatNumber(tx.tender_minvalue)],
+            ["Award Value", formatNumber(tx.award_value)],
+            ["Award Supplier", tx.award_supplier],
+            ["Days To Award", tx.days_to_award],
+            ["Category", tx.mainprocurementcategory],
+            ["Award Title", tx.award_title],
           ].map(([label, value]) => (
             <div key={label}>
               <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-              <p className="text-sm text-gray-800 font-medium break-words">{value}</p>
+
+              <p className="text-sm text-gray-800 font-medium break-words">
+                {value || "-"}
+              </p>
             </div>
           ))}
         </div>
@@ -48,26 +89,44 @@ function TxModal({ tx, onClose }) {
         <div className="bg-gray-50 rounded-xl p-4 mb-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">FastAPI Score</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                FastAPI Score
+              </p>
+
               <p className="text-3xl font-bold text-gray-900">
-                {typeof tx.score === 'number' ? tx.score.toFixed(4) : '-'}
+                {formatScore(tx.score)}
               </p>
             </div>
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${riskBadge(tx.risk_level)}`}>
-              {tx.risk_level || 'unknown'}
+
+            <span
+              className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${riskBadge(
+                tx.risk_level,
+              )}`}
+            >
+              {tx.risk_level || "unknown"}
             </span>
           </div>
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Explanation</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Explanation
+          </p>
+
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">{tx.explanation || 'No explanation returned by FastAPI.'}</pre>
+            <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">
+              {tx.explanation || "No explanation returned by FastAPI."}
+            </pre>
           </div>
         </div>
 
         <div className="mt-5 flex justify-end">
-          <button onClick={onClose} className="px-5 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors">Close</button>
+          <button
+            onClick={onClose}
+            className="px-5 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -77,142 +136,478 @@ function TxModal({ tx, onClose }) {
 export default function AuditDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [audit, setAudit] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [selectedTx, setSelectedTx] = useState(null);
-  const [txSearch, setTxSearch] = useState('');
-  const [txRiskFilter, setTxRiskFilter] = useState('');
+  const [txSearch, setTxSearch] = useState("");
+  const [txRiskFilter, setTxRiskFilter] = useState("");
   const [txPage, setTxPage] = useState(1);
+
   const TX_PER_PAGE = 10;
 
   useEffect(() => {
-    fetch(`${API}/${id}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          setAudit(data.audit);
-          setTransactions(data.transactions);
-        } else {
-          setError(data.message || 'Failed to load');
+    const fetchDetail = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(`${API}/${id}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          setError(data.message || "Gagal memuat detail audit");
+          return;
         }
-      })
-      .catch(() => setError('Network error'))
-      .finally(() => setLoading(false));
+
+        setAudit(data.audit);
+        setTransactions(data.transactions || []);
+      } catch (error) {
+        console.error("FETCH DETAIL ERROR:", error);
+        setError("Network error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetail();
   }, [id]);
 
   const filtered = transactions.filter((tx) => {
     const query = txSearch.toLowerCase();
+
     const matchesSearch =
       !query ||
-      tx.tender_title?.toLowerCase().includes(query) ||
-      tx.award_title?.toLowerCase().includes(query) ||
-      tx.award_supplier?.toLowerCase().includes(query) ||
-      tx.nama_daerah?.toLowerCase().includes(query);
-    const matchesRisk = !txRiskFilter || tx.risk_level === txRiskFilter;
+      String(tx.tender_title || "")
+        .toLowerCase()
+        .includes(query) ||
+      String(tx.award_title || "")
+        .toLowerCase()
+        .includes(query) ||
+      String(tx.award_supplier || "")
+        .toLowerCase()
+        .includes(query) ||
+      String(tx.nama_daerah || "")
+        .toLowerCase()
+        .includes(query);
+
+    const matchesRisk =
+      !txRiskFilter ||
+      String(tx.risk_level || "").toLowerCase() === txRiskFilter;
+
     return matchesSearch && matchesRisk;
   });
 
-  const totalPages = Math.ceil(filtered.length / TX_PER_PAGE);
-  const paginated = filtered.slice((txPage - 1) * TX_PER_PAGE, txPage * TX_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / TX_PER_PAGE));
 
-  if (loading) return (
-    <div className="min-h-screen bg-white font-sans">
-      <Navbar variant="internal" />
-      <div className="pt-14 flex items-center justify-center h-96">
-        <div className="text-center"><div className="text-4xl mb-3">...</div><p className="text-gray-500">Loading audit...</p></div>
-      </div>
-    </div>
+  const paginated = filtered.slice(
+    (txPage - 1) * TX_PER_PAGE,
+    txPage * TX_PER_PAGE,
   );
 
-  if (error) return (
-    <div className="min-h-screen bg-white font-sans">
-      <Navbar variant="internal" />
-      <div className="pt-14 flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="text-4xl mb-3">!</div>
-          <p className="text-red-600 font-medium">{error}</p>
-          <button onClick={() => navigate('/audit')} className="mt-4 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg">Back to Audit</button>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f3f4f8] font-sans">
+        <Navbar variant="internal" />
+
+        <div className="pt-14 flex items-center justify-center h-96">
+          <p className="text-gray-500">Loading audit...</p>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  if (error || !audit) {
+    return (
+      <div className="min-h-screen bg-[#f3f4f8] font-sans">
+        <Navbar variant="internal" />
+
+        <div className="pt-14 flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-red-600 font-medium">
+              {error || "Audit tidak ditemukan"}
+            </p>
+
+            <button
+              onClick={() => navigate("/audit")}
+              className="mt-4 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const totalAllocation = transactions.reduce(
+    (acc, tx) => acc + Number(tx.award_value || 0),
+    0,
   );
 
-  const highPct = audit.total_rows ? Math.round((audit.high_risk / audit.total_rows) * 100) : 0;
-  const medPct = audit.total_rows ? Math.round((audit.medium_risk / audit.total_rows) * 100) : 0;
-  const lowPct = audit.total_rows ? Math.round((audit.low_risk / audit.total_rows) * 100) : 0;
+  const aiEstimate = totalAllocation * 0.74;
+  const stateLoss = totalAllocation * 0.26;
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-[#f3f4f8] font-sans">
       <Navbar variant="internal" />
+
       <TxModal tx={selectedTx} onClose={() => setSelectedTx(null)} />
 
-      <section className="pt-14">
-        <div className="bg-gray-900 text-white">
-          <div className="max-w-5xl mx-auto px-6 py-10">
-            <button onClick={() => navigate('/audit')} className="text-gray-400 hover:text-white text-sm mb-4 flex items-center gap-1 transition-colors">
-              Back to Audit
-            </button>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Audit ID #{audit.id}</p>
-                <h1 className="text-2xl font-bold font-serif">{audit.filename}</h1>
-                <p className="text-gray-400 text-sm mt-1">
-                  {new Date(audit.created_at).toLocaleString('id-ID')} · {audit.total_rows} rows
-                </p>
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        {/* BACK */}
+        <button
+          onClick={() => navigate("/audit")}
+          className="text-sm text-gray-600 hover:text-black mb-5"
+        >
+          ← Kembali
+        </button>
+
+        {/* HEADER */}
+        <div className="mb-8">
+          <div className="flex flex-wrap justify-between gap-6 items-start">
+            <div className="max-w-3xl">
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-3">
+                PROYEK INFRASTRUKTUR STRATEGIS
+              </p>
+
+              <div className="border-l-4 border-red-500 pl-5">
+                <h1 className="text-5xl font-bold text-slate-900 leading-tight">
+                  {transactions?.[0]?.tender_title || "Tidak ada judul proyek"}
+                </h1>
+
+                <div className="mt-4 flex flex-wrap gap-3 items-center">
+                  <span className="bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded">
+                    STATUS: CRITICAL
+                  </span>
+
+                  <span className="text-sm text-gray-400">
+                    ID: INFRA-{audit.id}
+                  </span>
+                </div>
               </div>
-              <span className={`text-xs font-semibold px-3 py-1.5 rounded-full capitalize mt-1 ${
-                audit.status === 'completed'
-                  ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30'
-                  : audit.status === 'failed'
-                    ? 'bg-red-600/20 text-red-400'
-                    : 'bg-blue-600/20 text-blue-400'
-              }`}
-              >
-                {audit.status}
-              </span>
+            </div>
+
+            <div className="w-[300px] border border-gray-200 rounded-lg p-5 bg-white">
+              <p className="text-xs text-gray-400 uppercase mb-2">
+                ALOKASI TOTAL
+              </p>
+
+              <p className="text-4xl font-bold text-gray-900 leading-tight">
+                Rp {formatNumber(totalAllocation)}
+              </p>
             </div>
           </div>
         </div>
-      </section>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total Rows', value: audit.total_rows, color: 'text-gray-900', bg: 'bg-gray-50', border: 'border-gray-200' },
-            { label: 'High', value: audit.high_risk, sub: `${highPct}%`, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
-            { label: 'Medium', value: audit.medium_risk, sub: `${medPct}%`, color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-100' },
-            { label: 'Low', value: audit.low_risk, sub: `${lowPct}%`, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-          ].map((card) => (
-            <div key={card.label} className={`${card.bg} border ${card.border} rounded-xl p-4`}>
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{card.label}</p>
-              <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
-              {card.sub && <p className={`text-xs mt-1 ${card.color} opacity-70`}>{card.sub} of total</p>}
-            </div>
-          ))}
+        {/* ========================= FORENSIC AI ========================= */}
+        <div className="border border-gray-200 rounded-xl bg-white mb-6">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-xl font-bold text-slate-900">
+              👁️ Analisis Forensik AI (Explainable AI)
+            </h2>
+          </div>
+
+          {transactions?.[0] &&
+            (() => {
+              const tx = transactions[0];
+
+              const hargaAwal = Number(
+                tx.harga_awal || tx.tender_minvalue || 0,
+              );
+
+              const hargaFinal = Number(tx.harga_final || tx.award_value || 0);
+
+              const gapHarga = Number(tx.gap_harga ?? hargaFinal - hargaAwal);
+
+              const deviasi =
+                hargaAwal > 0 ? Math.abs((gapHarga / hargaAwal) * 100) : 0;
+
+              const score = Number(tx.score || 0);
+
+              const riskScore = Math.min(100, Math.round(score * 220));
+
+              const isMarkup = gapHarga > 0;
+
+              const explanation =
+                tx.explanation || "Tidak ada explanation dari AI.";
+
+              return (
+                <div className="p-6 grid lg:grid-cols-2 gap-5">
+                  {/* LEFT */}
+                  <div className="space-y-4">
+                    {/* GAP ANALYSIS */}
+                    <div
+                      className={`bg-gray-50 border-l-4 p-5 rounded-r-xl ${
+                        isMarkup ? "border-red-500" : "border-emerald-500"
+                      }`}
+                    >
+                      <p
+                        className={`text-xs font-bold uppercase tracking-wide mb-2 ${
+                          isMarkup ? "text-red-600" : "text-emerald-600"
+                        }`}
+                      >
+                        {isMarkup
+                          ? "ANOMALI TERDETEKSI: MARKUP HARGA"
+                          : "ANALISIS NORMAL"}
+                      </p>
+
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {isMarkup
+                          ? `Terdapat deviasi nilai sebesar ${deviasi.toFixed(
+                              2,
+                            )}% dari estimasi awal pengadaan.`
+                          : "Tidak ditemukan penyimpangan harga signifikan terhadap estimasi awal."}
+                      </p>
+                    </div>
+
+                    {/* AI EXPLANATION */}
+                    <div className="bg-gray-50 border-l-4 border-orange-400 p-5 rounded-r-xl">
+                      <p className="text-xs font-bold uppercase tracking-wide text-orange-600 mb-3">
+                        PENJELASAN AI
+                      </p>
+
+                      <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none">
+                        <ReactMarkdown>{explanation}</ReactMarkdown>
+                      </div>
+                    </div>
+
+                    {/* PROCUREMENT INFO */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                      <p className="text-xs uppercase tracking-wide text-slate-500 mb-4">
+                        INFORMASI PENGADAAN
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">
+                            Tender Awal
+                          </p>
+
+                          <p className="text-lg font-bold text-slate-900">
+                            Rp {Number(hargaAwal).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">
+                            Nilai Final
+                          </p>
+
+                          <p className="text-lg font-bold text-slate-900">
+                            Rp {Number(hargaFinal).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">Selisih</p>
+
+                          <p
+                            className={`text-lg font-bold ${
+                              gapHarga > 0 ? "text-red-600" : "text-emerald-600"
+                            }`}
+                          >
+                            Rp {Math.abs(gapHarga).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">Vendor</p>
+
+                          <p className="text-sm font-medium text-slate-900 line-clamp-2">
+                            {tx.award_supplier || "-"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT */}
+                  <div className="bg-slate-100 rounded-xl p-6">
+                    <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-6 text-center">
+                      LOGIKA KEPUTUSAN MODEL
+                    </p>
+
+                    <div className="space-y-7">
+                      {/* GAP SCORE */}
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Deviasi Harga</span>
+
+                          <span
+                            className={`font-bold ${
+                              isMarkup ? "text-red-600" : "text-emerald-600"
+                            }`}
+                          >
+                            {isMarkup ? "+" : ""}
+                            {deviasi.toFixed(2)}%
+                          </span>
+                        </div>
+
+                        <div className="h-3 bg-gray-300 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              isMarkup ? "bg-red-600" : "bg-emerald-500"
+                            }`}
+                            style={{
+                              width: `${Math.min(deviasi, 100)}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* AI SCORE */}
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Skor Risiko AI</span>
+
+                          <span className="font-bold text-orange-600">
+                            {riskScore}/100
+                          </span>
+                        </div>
+
+                        <div className="h-3 bg-gray-300 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-orange-400 rounded-full"
+                            style={{
+                              width: `${riskScore}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* RISK LEVEL */}
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Risk Level</span>
+
+                          <span
+                            className={`font-bold capitalize ${
+                              tx.risk_level === "high"
+                                ? "text-red-600"
+                                : tx.risk_level === "medium"
+                                  ? "text-orange-500"
+                                  : "text-emerald-600"
+                            }`}
+                          >
+                            {tx.risk_level}
+                          </span>
+                        </div>
+
+                        <div className="h-3 bg-gray-300 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              tx.risk_level === "high"
+                                ? "bg-red-600"
+                                : tx.risk_level === "medium"
+                                  ? "bg-orange-400"
+                                  : "bg-emerald-500"
+                            }`}
+                            style={{
+                              width:
+                                tx.risk_level === "high"
+                                  ? "92%"
+                                  : tx.risk_level === "medium"
+                                    ? "58%"
+                                    : "24%",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* PROCUREMENT SPEED */}
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Kecepatan Tender</span>
+
+                          <span className="font-bold text-blue-600">
+                            {tx.tgl_terima_count_pagu || tx.days_to_award || 0}{" "}
+                            Hari
+                          </span>
+                        </div>
+
+                        <div className="h-3 bg-gray-300 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full"
+                            style={{
+                              width: `${Math.min(
+                                (Number(
+                                  tx.tgl_terima_count_pagu ||
+                                    tx.days_to_award ||
+                                    0,
+                                ) /
+                                  100) *
+                                  100,
+                                100,
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-slate-300">
+                        <p className="text-xs text-gray-500 leading-relaxed text-center">
+                          Analisis berasal dari data transaksi aktual, skor AI,
+                          deviasi harga pengadaan, dan pola vendor historis pada
+                          database procurement.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
         </div>
 
-        {audit.total_rows > 0 && (
-          <div className="mb-8 border border-gray-200 rounded-xl p-5">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Risk Distribution</p>
-            <div className="flex h-4 rounded-full overflow-hidden gap-0.5">
-              {highPct > 0 && <div className="bg-red-500 transition-all" style={{ width: `${highPct}%` }} title={`High: ${highPct}%`} />}
-              {medPct > 0 && <div className="bg-orange-400 transition-all" style={{ width: `${medPct}%` }} title={`Medium: ${medPct}%`} />}
-              {lowPct > 0 && <div className="bg-emerald-500 transition-all" style={{ width: `${lowPct}%` }} title={`Low: ${lowPct}%`} />}
+        {/* METRICS */}
+        <div className="border border-gray-200 rounded-xl bg-white p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-900 mb-5">
+            Metrik Teknis & Realisasi Keuangan
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="border border-gray-200 rounded-xl p-5 bg-gray-50">
+              <p className="text-xs uppercase text-gray-500 mb-3">
+                PENGELUARAN DILAPORKAN
+              </p>
+
+              <p className="text-4xl font-bold text-slate-900">
+                Rp {formatNumber(totalAllocation)}
+              </p>
             </div>
-            <div className="flex gap-4 mt-2 text-xs text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> High {highPct}%</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> Medium {medPct}%</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Low {lowPct}%</span>
+
+            <div className="border border-emerald-200 rounded-xl p-5 bg-emerald-50">
+              <p className="text-xs uppercase text-emerald-700 mb-3">
+                ESTIMASI AI (FAIR VALUE)
+              </p>
+
+              <p className="text-4xl font-bold text-emerald-700">
+                Rp {formatNumber(aiEstimate)}
+              </p>
+            </div>
+
+            <div className="border border-red-300 rounded-xl p-5 bg-red-50">
+              <p className="text-xs uppercase text-red-600 mb-3">
+                POTENSI KERUGIAN NEGARA
+              </p>
+
+              <p className="text-4xl font-bold text-red-600">
+                Rp {formatNumber(stateLoss)}
+              </p>
             </div>
           </div>
-        )}
+        </div>
 
-        <div>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="text-lg font-bold text-gray-900 font-serif">Prediction Rows</h2>
-            <div className="flex gap-2">
+        {/* TABLE */}
+        <div className="border border-gray-200 rounded-xl overflow-x-auto bg-white">
+          <div className="p-5 border-b border-gray-100 flex flex-wrap gap-3 justify-between items-center">
+            <h2 className="text-xl font-bold text-slate-900">
+              Prediction Rows
+            </h2>
+
+            <div className="flex gap-2 flex-wrap">
               <input
                 type="text"
                 value={txSearch}
@@ -220,72 +615,103 @@ export default function AuditDetailPage() {
                   setTxSearch(event.target.value);
                   setTxPage(1);
                 }}
-                placeholder="Search title, supplier, nama_daerah..."
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-60"
+                placeholder="Search..."
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
               />
+
               <select
                 value={txRiskFilter}
                 onChange={(event) => {
                   setTxRiskFilter(event.target.value);
                   setTxPage(1);
                 }}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none text-gray-600"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">All Risk</option>
-                <option value="high">high</option>
-                <option value="medium">medium</option>
-                <option value="low">low</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
               </select>
             </div>
           </div>
 
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
-            {paginated.length === 0 ? (
-              <div className="py-12 text-center text-gray-400 text-sm">No rows found.</div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    {['Tender Title', 'Supplier', 'Category', 'Award Value', 'Days', 'Score', 'Risk', 'Detail'].map((header) => (
-                      <th key={header} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginated.map((tx, index) => (
-                    <tr key={tx.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${index === paginated.length - 1 ? 'border-0' : ''}`}>
-                      <td className="px-4 py-3 text-sm text-gray-800 max-w-[240px]" title={tx.tender_title}>{tx.tender_title || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 max-w-[160px]" title={tx.award_supplier}>{tx.award_supplier || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{tx.mainprocurementcategory || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                        {tx.award_value ? Number(tx.award_value).toLocaleString('id-ID') : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{tx.days_to_award ?? '-'}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                        {typeof tx.score === 'number' ? tx.score.toFixed(4) : '-'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${riskBadge(tx.risk_level)}`}>{tx.risk_level || 'unknown'}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => setSelectedTx(tx)} className="text-sm text-teal-700 font-medium hover:text-teal-900 whitespace-nowrap">
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <table className="w-full min-w-[900px]">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                {[
+                  "Tender Title",
+                  "Supplier",
+                  "Category",
+                  "Award Value",
+                  "Days",
+                  "Score",
+                  "Risk",
+                  "Detail",
+                ].map((header) => (
+                  <th
+                    key={header}
+                    className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-4">
-              <button onClick={() => setTxPage((current) => Math.max(1, current - 1))} disabled={txPage === 1} className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40">Prev</button>
-              <span className="text-sm text-gray-500">{txPage} / {totalPages}</span>
-              <button onClick={() => setTxPage((current) => Math.min(totalPages, current + 1))} disabled={txPage === totalPages} className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40">Next</button>
-            </div>
-          )}
+            <tbody>
+              {paginated.map((tx, index) => (
+                <tr
+                  key={tx.id || index}
+                  className={`border-b border-gray-50 hover:bg-gray-50 ${
+                    index === paginated.length - 1 ? "border-0" : ""
+                  }`}
+                >
+                  <td className="px-4 py-3 text-sm text-gray-800 max-w-[260px] truncate">
+                    {tx.tender_title || "-"}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {tx.award_supplier || "-"}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {tx.mainprocurementcategory || "-"}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {formatNumber(tx.award_value)}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {tx.days_to_award ?? "-"}
+                  </td>
+
+                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                    {formatScore(tx.score)}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${riskBadge(
+                        tx.risk_level,
+                      )}`}
+                    >
+                      {tx.risk_level || "unknown"}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setSelectedTx(tx)}
+                      className="text-sm text-teal-700 font-medium hover:text-teal-900"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

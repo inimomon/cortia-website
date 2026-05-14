@@ -208,6 +208,7 @@ export default function ExplorePage() {
                 return (
                   <div
                     key={province.key}
+                    onClick={() => navigate(`/detail-prov/${province.key}`)}
                     className="bg-white border border-gray-200 rounded-md p-4 shadow-sm hover:shadow-md transition"
                   >
                     {/* TOP */}

@@ -30,12 +30,6 @@ const ProvinceDetail = ({ selected }) => {
       setDetail(null);
       return;
     }
-
-    // ProvinceDetail.jsx
-    console.log(
-      "URL:",
-      `${import.meta.env.VITE_BE_LINK}/prediction/stats/${encodeURIComponent(selected.name)}`,
-    );
     const fetchDetail = async () => {
       try {
         setLoading(true);
@@ -126,7 +120,7 @@ const ProvinceDetail = ({ selected }) => {
             <div>
               <p className="text-xs text-gray-400">Total Data / Proyek</p>
               <p className="text-2xl font-bold text-gray-900">
-                {totalData ? totalData.toLocaleString() : "-"}
+              {totalData ? totalData.toLocaleString() : "-"}  
               </p>
             </div>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, GeoJSON, TileLayer } from "react-leaflet";
+import { MapContainer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import indonesiaGeoJson from "../../data/indonesia-prov.json";
 import axios from "axios";
@@ -8,11 +8,7 @@ import L from "leaflet";
 const normalizeProvinceName = (name) => {
   if (!name) return "";
 
-  let upper = name
-    .toUpperCase()
-    .trim()
-    .replace(/\./g, "")
-    .replace(/\s+/g, " ");
+  let upper = name.toUpperCase().trim().replace(/\./g, "").replace(/\s+/g, " ");
 
   if (upper.includes("ACEH")) return "ACEH";
   if (upper.includes("JAKARTA")) return "DKI JAKARTA";
@@ -25,6 +21,7 @@ const normalizeProvinceName = (name) => {
 
   return upper;
 };
+
 const formatCurrency = (value) => {
   const number = Number(value || 0);
 
@@ -56,11 +53,9 @@ const getColor = (status) => {
   }
 };
 
-const indonesiaBounds = L.latLngBounds(
-  L.latLng(-12, 94),
-  L.latLng(8, 142),
-);
-const Map = () => {
+const indonesiaBounds = L.latLngBounds(L.latLng(-12, 94), L.latLng(8, 142));
+
+const Map = ({ onProvinceClick }) => {
   const [provinceRiskData, setProvinceRiskData] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -94,11 +89,9 @@ const Map = () => {
             countSafe: Number(item.count_safe ?? 0),
             totalData: Number(item.total_data ?? 0),
             heatmapStatus: item.heatmap_status,
-            heatmapColor: item.heatmap_color,
           };
         });
 
-        console.log("DATA API:", mappedData);
         setProvinceRiskData(mappedData);
       } catch (err) {
         console.error("Fetch risk map error:", err);
@@ -120,25 +113,16 @@ const Map = () => {
     );
   };
 
-  const findProvince = (geoName) => {
-    return data.find(
-      (item) =>
-        normalizeProvinceName(item.name) === normalizeProvinceName(geoName),
-    );
-  };
-
   const styleFeature = (feature) => {
     const name = getProvinceNameFromGeoJson(feature);
     const data = provinceRiskData[name];
-
-      console.log("Tidak cocok:", name);
-    }
 
     return {
       fillColor: getColor(data?.heatmapStatus),
       fillOpacity: data ? 0.85 : 0.25,
       color: "#ffffff",
       weight: 1.2,
+      cursor: "pointer",
     };
   };
 
@@ -161,16 +145,6 @@ const Map = () => {
           opacity: 1,
         },
       );
-
-      layer.on({
-        click() {
-          const found = findProvince(name);
-
-          if (found && onProvinceClick) {
-            onProvinceClick(found);
-          }
-        },
-      });
 
       return;
     }
@@ -235,6 +209,10 @@ const Map = () => {
             ${formatCurrency(mapData.totalAlokasiFinal)}
           </span>
         </div>
+
+        <p style="font-size:11px; color:#6b7280; margin:8px 0 0">
+          Klik untuk melihat detail daerah
+        </p>
       </div>
       `,
       {
@@ -245,10 +223,18 @@ const Map = () => {
 
     layer.on({
       click() {
-        const found = findProvince(name);
-
-        if (found && onProvinceClick) {
-          onProvinceClick(found);
+        if (onProvinceClick) {
+          onProvinceClick({
+            name: mapData.nama,
+            skor: mapData.riskScore,
+            status: mapData.heatmapStatus,
+            anomali: mapData.countDanger,
+            warning: mapData.countWarning,
+            safe: mapData.countSafe,
+            totalData: mapData.totalData,
+            totalAlokasi: mapData.totalAlokasi,
+            totalAlokasiFinal: mapData.totalAlokasiFinal,
+          });
         }
       },
 
@@ -298,7 +284,6 @@ const Map = () => {
           width: "100%",
           background: "#E8F9FF",
         }}
-        worldCopyJump={false}
       >
         <GeoJSON
           key={JSON.stringify(Object.keys(provinceRiskData))}
