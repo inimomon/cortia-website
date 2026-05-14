@@ -13,14 +13,14 @@ const LogoList = () => {
         <img
             src={opentender}
             alt=""
-            className='max-h-full max-w-full object-contain'
+            className='max-h-full max-w-full object-contain scale-140'
         />
     </div>
     <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>
         <img
             src={AiConnectHitam}
             alt=""
-            className='max-h-full max-w-full object-contain scale-180'
+            className='max-h-full max-w-full object-contain scale-250'
         />
     </div>
     <div className='w-16 h-10 md:w-24 md:h-16 flex items-center justify-center'>

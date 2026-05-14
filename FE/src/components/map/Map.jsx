@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { MapContainer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import indonesiaGeoJson from "../../data/indonesia-prov.json";
 import axios from "axios";
+import L from "leaflet";
 
 const normalizeProvinceName = (name) => {
   if (!name) return "";
 
-  let upper = name.toUpperCase().trim().replace(/\./g, "").replace(/\s+/g, " ");
+  let upper = name
+    .toUpperCase()
+    .trim()
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ");
 
   if (upper.includes("ACEH")) return "ACEH";
   if (upper.includes("JAKARTA")) return "DKI JAKARTA";
-  if (upper.includes("YOGYAKARTA")) return "DAERAH ISTIMEWA YOGYAKARTA";
-  if (upper.includes("BANGKA")) return "KEPULAUAN BANGKA BELITUNG";
+  if (upper.includes("YOGYAKARTA"))
+    return "DAERAH ISTIMEWA YOGYAKARTA";
+  if (upper.includes("BANGKA"))
+    return "KEPULAUAN BANGKA BELITUNG";
   if (upper.includes("KEPULAUAN RIAU") || upper === "KEP RIAU")
     return "KEPULAUAN RIAU";
   if (upper === "NTB") return "NUSA TENGGARA BARAT";
@@ -20,6 +27,7 @@ const normalizeProvinceName = (name) => {
 
   return upper;
 };
+
 const formatCurrency = (value) => {
   const number = Number(value || 0);
 
@@ -50,9 +58,15 @@ const getColor = (status) => {
       return "#22c55e";
 
     default:
-      return "#d1d5db";
+      return "#374151";
   }
 };
+
+const indonesiaBounds = L.latLngBounds(
+  L.latLng(-12, 94),
+  L.latLng(8, 142),
+);
+
 const Map = () => {
   const [provinceRiskData, setProvinceRiskData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -91,8 +105,6 @@ const Map = () => {
           };
         });
 
-        console.log("DATA API:", mappedData);
-
         setProvinceRiskData(mappedData);
       } catch (err) {
         console.error("Fetch risk map error:", err);
@@ -118,13 +130,9 @@ const Map = () => {
     const name = getProvinceNameFromGeoJson(feature);
     const data = provinceRiskData[name];
 
-    if (!data) {
-      console.log("Tidak cocok:", name);
-    }
-
     return {
       fillColor: getColor(data?.heatmapStatus),
-      fillOpacity: data ? 0.85 : 0.25,
+      fillOpacity: data ? 0.9 : 0.3,
       color: "#ffffff",
       weight: 1.2,
     };
@@ -164,14 +172,14 @@ const Map = () => {
         </p>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Status:</span>
+          <span style="color:#9ca3af">Status:</span>
           <span style="font-weight:700; color:${riskColor}">
             ${data.heatmapStatus}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Index Risiko:</span>
+          <span style="color:#9ca3af">Index Risiko:</span>
           <span style="font-weight:700">
             ${data.riskScore.toFixed(2)}
           </span>
@@ -180,36 +188,36 @@ const Map = () => {
         <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Danger:</span>
+          <span style="color:#9ca3af">Danger:</span>
           <span style="font-weight:600">${data.countDanger}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Warning:</span>
+          <span style="color:#9ca3af">Warning:</span>
           <span style="font-weight:600">${data.countWarning}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Safe:</span>
+          <span style="color:#9ca3af">Safe:</span>
           <span style="font-weight:600">${data.countSafe}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Total Data:</span>
+          <span style="color:#9ca3af">Total Data:</span>
           <span style="font-weight:600">${data.totalData}</span>
         </div>
 
         <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-          <span style="color:#6b7280">Total Alokasi:</span>
+          <span style="color:#9ca3af">Total Alokasi:</span>
           <span style="font-weight:600">
             ${formatCurrency(data.totalAlokasi)}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px">
-          <span style="color:#6b7280">Alokasi Final:</span>
+          <span style="color:#9ca3af">Alokasi Final:</span>
           <span style="font-weight:600">
             ${formatCurrency(data.totalAlokasiFinal)}
           </span>
@@ -233,7 +241,7 @@ const Map = () => {
 
       mouseout(e) {
         e.target.setStyle({
-          fillOpacity: 0.85,
+          fillOpacity: 0.9,
           weight: 1.2,
         });
       },
@@ -249,26 +257,37 @@ const Map = () => {
   }
 
   return (
-    <MapContainer
-      center={[-2.5489, 118.0149]}
-      zoom={4}
-      minZoom={4}
-      maxZoom={7}
-      scrollWheelZoom={true}
-      style={{ height: "100%", width: "100%" }}
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        background: "#E8F9FF",
+      }}
     >
-      <TileLayer
-        attribution="&copy; OpenStreetMap contributors"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-
-      <GeoJSON
-        key={JSON.stringify(Object.keys(provinceRiskData))}
-        data={indonesiaGeoJson}
-        style={styleFeature}
-        onEachFeature={onEachFeature}
-      />
-    </MapContainer>
+      <MapContainer
+        center={[-2.5489, 118.0149]}
+        zoom={5}
+        minZoom={4}
+        maxZoom={8}
+        maxBounds={indonesiaBounds}
+        maxBoundsViscosity={1.0}
+        scrollWheelZoom={true}
+        zoomControl={true}
+        style={{
+          height: "100%",
+          width: "100%",
+          background: "#E8F9FF",
+        }}
+        worldCopyJump={false}
+      >
+        <GeoJSON
+          key={JSON.stringify(Object.keys(provinceRiskData))}
+          data={indonesiaGeoJson}
+          style={styleFeature}
+          onEachFeature={onEachFeature}
+        />
+      </MapContainer>
+    </div>
   );
 };
 
