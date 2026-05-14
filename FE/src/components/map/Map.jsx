@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, GeoJSON } from "react-leaflet";
+import { MapContainer, GeoJSON, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import indonesiaGeoJson from "../../data/indonesia-prov.json";
 import axios from "axios";
@@ -55,8 +55,7 @@ const getColor = (status) => {
       return "#22c55e";
 
     default:
-<<<<<<< HEAD
-      return "#374151";
+      return "#d1d5db";
   }
 };
 
@@ -64,12 +63,6 @@ const indonesiaBounds = L.latLngBounds(
   L.latLng(-12, 94),
   L.latLng(8, 142),
 );
-
-=======
-      return "#d1d5db";
-  }
-};
->>>>>>> 6a45c91 (risk map integration)
 const Map = () => {
   const [provinceRiskData, setProvinceRiskData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -80,11 +73,7 @@ const Map = () => {
         setLoading(true);
 
         const response = await axios.get(
-<<<<<<< HEAD
           "http://localhost:8001/api/v1/riskMap",
-=======
-          "http://localhost:8005/api/v1/riskMap",
->>>>>>> 6a45c91 (risk map integration)
         );
 
         const result = response.data;
@@ -112,11 +101,7 @@ const Map = () => {
           };
         });
 
-<<<<<<< HEAD
-=======
         console.log("DATA API:", mappedData);
-
->>>>>>> 6a45c91 (risk map integration)
         setProvinceRiskData(mappedData);
       } catch (err) {
         console.error("Fetch risk map error:", err);
@@ -142,19 +127,12 @@ const Map = () => {
     const name = getProvinceNameFromGeoJson(feature);
     const data = provinceRiskData[name];
 
-<<<<<<< HEAD
-    return {
-      fillColor: getColor(data?.heatmapStatus),
-      fillOpacity: data ? 0.9 : 0.3,
-=======
-    if (!data) {
       console.log("Tidak cocok:", name);
     }
 
     return {
       fillColor: getColor(data?.heatmapStatus),
       fillOpacity: data ? 0.85 : 0.25,
->>>>>>> 6a45c91 (risk map integration)
       color: "#ffffff",
       weight: 1.2,
     };
@@ -194,22 +172,14 @@ const Map = () => {
         </p>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Status:</span>
-=======
           <span style="color:#6b7280">Status:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:700; color:${riskColor}">
             ${data.heatmapStatus}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Index Risiko:</span>
-=======
           <span style="color:#6b7280">Index Risiko:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:700">
             ${data.riskScore.toFixed(2)}
           </span>
@@ -218,60 +188,36 @@ const Map = () => {
         <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Danger:</span>
-=======
           <span style="color:#6b7280">Danger:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:600">${data.countDanger}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Warning:</span>
-=======
           <span style="color:#6b7280">Warning:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:600">${data.countWarning}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Safe:</span>
-=======
           <span style="color:#6b7280">Safe:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:600">${data.countSafe}</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Total Data:</span>
-=======
           <span style="color:#6b7280">Total Data:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:600">${data.totalData}</span>
         </div>
 
         <hr style="margin:6px 0"/>
 
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Total Alokasi:</span>
-=======
           <span style="color:#6b7280">Total Alokasi:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:600">
             ${formatCurrency(data.totalAlokasi)}
           </span>
         </div>
 
         <div style="display:flex; justify-content:space-between; font-size:12px">
-<<<<<<< HEAD
-          <span style="color:#9ca3af">Alokasi Final:</span>
-=======
           <span style="color:#6b7280">Alokasi Final:</span>
->>>>>>> 6a45c91 (risk map integration)
           <span style="font-weight:600">
             ${formatCurrency(data.totalAlokasiFinal)}
           </span>
@@ -295,11 +241,7 @@ const Map = () => {
 
       mouseout(e) {
         e.target.setStyle({
-<<<<<<< HEAD
-          fillOpacity: 0.9,
-=======
           fillOpacity: 0.85,
->>>>>>> 6a45c91 (risk map integration)
           weight: 1.2,
         });
       },
@@ -315,7 +257,6 @@ const Map = () => {
   }
 
   return (
-<<<<<<< HEAD
     <div
       style={{
         height: "100%",
@@ -347,28 +288,6 @@ const Map = () => {
         />
       </MapContainer>
     </div>
-=======
-    <MapContainer
-      center={[-2.5489, 118.0149]}
-      zoom={4}
-      minZoom={4}
-      maxZoom={7}
-      scrollWheelZoom={true}
-      style={{ height: "100%", width: "100%" }}
-    >
-      <TileLayer
-        attribution="&copy; OpenStreetMap contributors"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-
-      <GeoJSON
-        key={JSON.stringify(Object.keys(provinceRiskData))}
-        data={indonesiaGeoJson}
-        style={styleFeature}
-        onEachFeature={onEachFeature}
-      />
-    </MapContainer>
->>>>>>> 6a45c91 (risk map integration)
   );
 };
 
