@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import AuditPage from './pages/AuditPage';
 import AuditDetailPage from './pages/AuditDetailPage';
 import FeaturePage from './pages/FeaturePage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path='/feature' element={<FeaturePage />} />
         <Route path='/audit' element={<AuditPage /> } />
         <Route path="/audit/:id" element={<AuditDetailPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>
   )
