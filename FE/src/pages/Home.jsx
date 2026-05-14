@@ -10,7 +10,6 @@ import FinalCTA from '../components/ui/FinalCTA';
 import Footer from '../components/ui/Footer';
 
 import axios from "axios";
-
 import { Eye, History, BarChart3, Gavel, AlertOctagon } from "lucide-react";
 
 const challenges = [
@@ -63,7 +62,11 @@ export default function HomePage() {
         setLoading(true);
 
         const response = await axios.get(
+<<<<<<< HEAD
           "http://localhost:8001/api/v1/riskMap/",
+=======
+          "http://localhost:8005/api/v1/riskMap/",
+>>>>>>> 6a45c91 (risk map integration)
         );
 
         setRiskData(response.data.data);
@@ -89,9 +92,17 @@ export default function HomePage() {
       {/* Dynamic Injection */}
       <DynamicInjection />
 
+<<<<<<< HEAD
       <ChallengeSection
         challenges={challenges}
         imageUrl="https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200"
+=======
+      {/* The Challenge */}
+      <ChallengeSection
+        challenges={challenges}
+        imageUrl="https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200"
+      />
+>>>>>>> 6a45c91 (risk map integration)
       />
 
       {/* Loading */}
