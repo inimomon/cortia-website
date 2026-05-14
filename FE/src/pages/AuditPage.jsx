@@ -4,7 +4,7 @@ import Navbar from "../components/ui/Navbar";
 import { File as FileIcon } from "lucide-react";
 import Footer from "../components/ui/Footer";
 import HeroAudit from "../components/ui/HeroAudit";
-import { LogIn, UserPlus} from "lucide-react";
+import { LogIn, UserPlus } from "lucide-react";
 
 const PORT = import.meta.env.VITE_BE_LINK;
 const API = `${PORT}/audit`;
@@ -106,7 +106,6 @@ function LoginRequiredModal({ open, onLoginClick, onRegisterClick }) {
             <LogIn className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
 
             <span>Masuk ke Akun</span>
-
           </button>
 
           <button
@@ -116,7 +115,6 @@ function LoginRequiredModal({ open, onLoginClick, onRegisterClick }) {
             <UserPlus className="w-4 h-4 transition-transform group-hover:scale-110" />
 
             <span>Daftar Sekarang</span>
-
           </button>
         </div>
       </div>
@@ -701,10 +699,23 @@ export default function AuditOldPage() {
                   </div>
                 </>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      Analisis Tender Secara Manual
+                    </h2>
+
+                    <p className="text-sm text-gray-500 leading-relaxed max-w-2xl">
+                      Masukkan detail proyek pengadaan untuk dianalisis oleh
+                      sistem AI. Sistem akan membantu mendeteksi potensi
+                      anomali, ketidakwajaran nilai kontrak, dan pola tender
+                      yang berisiko.
+                    </p>
+                  </div>
+
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                      Nama Daerah *
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Provinsi / Daerah Pengadaan *
                     </label>
 
                     <SearchableNamaDaerah
@@ -720,36 +731,36 @@ export default function AuditOldPage() {
 
                   {[
                     {
-                      label: "Judul Tender *",
+                      label: "Nama Proyek / Tender *",
                       key: "tender_title",
-                      placeholder: "Judul tender",
+                      placeholder: "Contoh: Pembangunan Jalan Nasional Tahap 2",
                     },
                     {
-                      label: "Nilai Minimum Tender *",
+                      label: "Estimasi Anggaran Tender (Rp) *",
                       key: "tender_minvalue",
                       type: "number",
-                      placeholder: "1252306428.2",
+                      placeholder: "Contoh: 1500000000",
                     },
                     {
-                      label: "Nilai Penghargaan *",
+                      label: "Nilai Kontrak yang Disetujui (Rp) *",
                       key: "award_value",
                       type: "number",
-                      placeholder: "1145627700",
+                      placeholder: "Contoh: 1425000000",
                     },
                     {
-                      label: "Tanggal Penghargaan *",
+                      label: "Tanggal Penetapan Pemenang *",
                       key: "award_date",
                       type: "date",
                     },
                     {
-                      label: "Hari ke Penghargaan *",
+                      label: "Durasi Tender Sampai Penetapan (Hari) *",
                       key: "days_to_award",
                       type: "number",
-                      placeholder: "11",
+                      placeholder: "Contoh: 14",
                     },
                   ].map((field) => (
                     <div key={field.key}>
-                      <label className="block text-xs text-gray-500 mb-1">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
                         {field.label}
                       </label>
 
@@ -769,8 +780,8 @@ export default function AuditOldPage() {
                   ))}
 
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                      Kategori Pengadaan Utama *
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Jenis Pengadaan *
                     </label>
 
                     <select
@@ -783,11 +794,15 @@ export default function AuditOldPage() {
                       }
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
                     >
-                      <option value="">Pilih kategori</option>
+                      <option value="">Pilih jenis pengadaan</option>
 
                       {MAIN_PROCUREMENT_CATEGORY_OPTIONS.map((option) => (
                         <option key={option} value={option}>
-                          {option}
+                          {option === "Goods"
+                            ? "Barang"
+                            : option === "Services"
+                              ? "Jasa"
+                              : "Pekerjaan Konstruksi"}
                         </option>
                       ))}
                     </select>
@@ -795,18 +810,18 @@ export default function AuditOldPage() {
 
                   {[
                     {
-                      label: "Judul Kontrak *",
+                      label: "Nama Kontrak / Paket Pekerjaan *",
                       key: "award_title",
-                      placeholder: "Judul kontrak",
+                      placeholder: "Contoh: Kontrak Pembangunan Jalan Nasional",
                     },
                     {
-                      label: "Vendor Pemenang *",
+                      label: "Perusahaan / Vendor Pemenang Tender *",
                       key: "award_supplier",
-                      placeholder: "Nama vendor pemenang",
+                      placeholder: "Contoh: PT Maju Infrastruktur Indonesia",
                     },
                   ].map((field) => (
                     <div key={field.key}>
-                      <label className="block text-xs text-gray-500 mb-1">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
                         {field.label}
                       </label>
 
@@ -828,17 +843,14 @@ export default function AuditOldPage() {
                   <button
                     onClick={handleManualSubmit}
                     disabled={manualLoading}
-                    className="w-full bg-gray-900 text-white text-sm py-2.5 rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                    className="w-full bg-gray-900 text-white text-sm py-3 rounded-xl hover:bg-gray-700 transition-colors disabled:opacity-50 font-medium"
                   >
-                    {manualLoading
-                      ? "Menganalisis..."
-                      : "Analisis Entri Manual"}
+                    {manualLoading ? "Menganalisis..." : "Analisis Data Tender"}
                   </button>
                 </div>
               )}
             </div>
           </div>
-
           <div className="border border-gray-200 rounded-xl p-5">
             <h3 className="font-semibold text-gray-900 mb-4 text-sm">
               Data Analisis
