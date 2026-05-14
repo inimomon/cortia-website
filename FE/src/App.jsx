@@ -18,8 +18,8 @@ function App() {
         <Route path='/login' element={<LoginPage />} />
         <Route path='/register' element={<RegisterPage />} />
         <Route path='/feature' element={<FeaturePage />} />
-        <Route path='/audit' element={<AuditPage /> } />
-        <Route path="/audit/:id" element={<AuditDetailPage />} />
+        <Route path='/analisa' element={<AuditPage /> } />
+        <Route path="/analisa/:id" element={<AuditDetailPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path='/explore' element={<ExplorePage />} />
         <Route path='/detail-prov/:id' element={<DetailProv />} />

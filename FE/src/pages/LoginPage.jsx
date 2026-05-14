@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import Navbar from "../components/ui/Navbar";
+import Footer from "../components/ui/Footer";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const LoginPage = () => {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
       <Navbar />
 
@@ -122,7 +124,6 @@ const LoginPage = () => {
             >
               {loading ? "Loading..." : "Masuk ke Sistem"}
 
-              <ArrowRight size={18} />
             </button>
 
             <p className="text-center text-sm text-slate-500">
@@ -138,6 +139,8 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 

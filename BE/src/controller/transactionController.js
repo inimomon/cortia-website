@@ -11,8 +11,16 @@ const getProjectsByProvince = async (req, res) => {
   try {
     const { daerah } = req.params;
 
+    if (!daerah) {
+      return res.status(400).json({
+        success: false,
+        message: "Parameter daerah tidak boleh kosong",
+      });
+    }
+
     const rows = await Transaction.findAll({
       order: [["score", "DESC"]],
+      limit: 100,
     });
 
     const filtered = rows.filter(

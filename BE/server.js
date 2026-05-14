@@ -15,7 +15,8 @@ const predictionRouter = require("./src/router/predictionRouter");
 const authRouter = require("./src/router/authRouter");
 const auditRouter = require("./src/router/auditRouter");
 const riskMapRouter = require("./src/router/riskMapRouter");
-const transactionRoute = require("./src/router/trancactionRouter");
+const transactionRouter = require("./src/router/transactionRouter");
+
 const app = express();
 
 app.use(cors());
@@ -26,7 +27,7 @@ app.use("/api/v1/prediction", predictionRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/audit", auditRouter);
 app.use("/api/v1/riskMap", riskMapRouter);
-app.use("/api/v1/transaction", transactionRoute);
+app.use("/api/v1/transaction", transactionRouter);
 
 app.get("/", (req, res) => {
   res.json("hello");

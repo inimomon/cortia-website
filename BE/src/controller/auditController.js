@@ -500,7 +500,19 @@ const analyzeManualInput = async (req, res) => {
     }
 
     const payload = sanitizeManual(req.body);
-    const result = await requestFastApiInputText(payload);
+
+    let result;
+    try {
+      result = await requestFastApiInputText(payload);
+    } catch (fastApiError) {
+      console.error("FastAPI error:", fastApiError.message);
+      return res.status(503).json({
+        success: false,
+        message:
+          "Layanan analisis AI tidak tersedia. Silakan coba lagi nanti atau hubungi administrator.",
+        error: fastApiError.message,
+      });
+    }
 
     const riskLevel = String(result.risk_level || "low").toLowerCase();
 

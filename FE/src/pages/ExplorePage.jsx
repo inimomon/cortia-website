@@ -2,41 +2,75 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../components/ui/Navbar";
+import Footer from "../components/ui/Footer";
 
 const statusConfig = {
   KRITIS: {
-    bg: "bg-red-100",
+    bg: "bg-red-50",
     text: "text-red-700",
     border: "border-red-500",
   },
   ANOMALI: {
-    bg: "bg-yellow-100",
+    bg: "bg-yellow-50",
     text: "text-yellow-700",
     border: "border-yellow-500",
   },
   STABIL: {
-    bg: "bg-green-100",
+    bg: "bg-green-50",
     text: "text-green-700",
     border: "border-green-500",
   },
 };
 
 const skorColor = (score) => {
-  if (score >= 15) return "text-red-600";
-  if (score >= 7) return "text-yellow-500";
+  const value = Number(score || 0);
+
+  if (value >= 15) return "text-red-600";
+  if (value >= 7) return "text-yellow-500";
   return "text-green-600";
+};
+
+const translateCategory = (category) => {
+  const value = String(category || "").toLowerCase();
+
+  if (value === "goods") return "Barang";
+  if (value === "services") return "Jasa";
+  if (value === "works") return "Pekerjaan/Konstruksi";
+
+  return category || "Tanpa Kategori";
+};
+
+const categoryColor = (percentage) => {
+  const value = Number(percentage || 0);
+
+  if (value >= 50) {
+    return {
+      bar: "bg-red-500",
+      text: "text-red-600",
+    };
+  }
+
+  if (value >= 25) {
+    return {
+      bar: "bg-yellow-500",
+      text: "text-yellow-600",
+    };
+  }
+
+  return {
+    bar: "bg-green-500",
+    text: "text-green-600",
+  };
 };
 
 export default function ExplorePage() {
   const [search, setSearch] = useState("");
   const [risiko, setRisiko] = useState("Semua Tingkat");
-
   const [data, setData] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // PAGINATION
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -48,14 +82,12 @@ export default function ExplorePage() {
         setLoading(true);
         setError("");
 
-        // FETCH SUMMARY
         const summaryResponse = await axios.get(
-          `${import.meta.env.VITE_BE_LINK}/prediction/summary`,
+          `${import.meta.env.VITE_BE_LINK}/prediction/summary`
         );
 
-        // FETCH RISK MAP
         const riskMapResponse = await axios.get(
-          `${import.meta.env.VITE_BE_LINK}/riskMap`,
+          `${import.meta.env.VITE_BE_LINK}/riskMap`
         );
 
         if (!summaryResponse.data.success) {
@@ -71,33 +103,28 @@ export default function ExplorePage() {
         const summaryData = summaryResponse.data.data || [];
         const riskMapData = riskMapResponse.data.data || [];
 
-        // MERGE DATA
         const merged = summaryData.map((item) => {
           const risk = riskMapData.find(
             (r) =>
               r.daerah?.toLowerCase().trim() ===
-              item.daerah?.toLowerCase().trim(),
+              item.daerah?.toLowerCase().trim()
           );
 
           const heatStatus = risk?.heatmap_status || "SAFE";
 
           return {
             ...item,
-
             skorAnomali: Number(risk?.index_resiko || 0),
-
             status:
               heatStatus === "DANGER"
                 ? "KRITIS"
                 : heatStatus === "WARNING"
-                  ? "ANOMALI"
-                  : "STABIL",
-
+                ? "ANOMALI"
+                : "STABIL",
             riskLevel: heatStatus,
           };
         });
 
-        // SORT HIGHEST SCORE
         merged.sort((a, b) => b.skorAnomali - a.skorAnomali);
 
         setData(merged);
@@ -112,7 +139,6 @@ export default function ExplorePage() {
     fetchData();
   }, []);
 
-  // FILTER
   const filtered = useMemo(() => {
     return data.filter((province) => {
       const query = search.trim().toLowerCase();
@@ -132,74 +158,73 @@ export default function ExplorePage() {
     });
   }, [data, search, risiko]);
 
-  // RESET PAGE
   useEffect(() => {
     setCurrentPage(1);
   }, [search, risiko]);
 
-  // PAGINATION
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-
-    return filtered.slice(start, end);
+    return filtered.slice(start, start + itemsPerPage);
   }, [filtered, currentPage]);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-white to-slate-100 font-sans">
       <Navbar variant="internal" />
 
-      <div className="max-w-7xl mx-auto px-6 pt-24 pb-20">
-        {/* HEADER */}
-        <h1 className="text-4xl font-bold text-gray-900 mb-2 font-serif">
-          Eksplorasi Anggaran Infrastruktur
-        </h1>
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-28 pb-20">
+        <div className="mb-10">
+          <p className="text-[11px] font-bold tracking-[0.25em] uppercase text-[#0B1C30]/50 mb-3">
+            Explore Data
+          </p>
 
-        <p className="text-gray-500 text-sm mb-8">
-          Jelajahi total anggaran, category proyek, dan skor risiko per daerah.
-        </p>
+          <h1 className="text-3xl md:text-5xl font-bold text-[#0B1C30] font-serif leading-tight">
+            Eksplorasi Anggaran Infrastruktur
+          </h1>
 
-        {/* FILTER */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari daerah..."
-            className="flex-1 min-w-64 border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
-
-          <select
-            value={risiko}
-            onChange={(e) => setRisiko(e.target.value)}
-            className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none"
-          >
-            {["Semua Tingkat", "Kritis", "Anomali", "Stabil"].map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select>
+          <p className="text-[#0B1C30]/60 text-sm md:text-base mt-3 max-w-2xl">
+            Jelajahi total anggaran, kategori proyek, dan skor risiko per daerah
+            secara lebih terbuka dan terstruktur.
+          </p>
         </div>
 
-        {/* LOADING */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm mb-8">
+          <div className="flex flex-col md:flex-row gap-3">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari daerah..."
+              className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#0B1C30]/20"
+            />
+
+            <select
+              value={risiko}
+              onChange={(e) => setRisiko(e.target.value)}
+              className="border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#0B1C30]/20"
+            >
+              {["Semua Tingkat", "Kritis", "Anomali", "Stabil"].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {loading && (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 text-center text-gray-500">
+          <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 shadow-sm">
             Memuat data...
           </div>
         )}
 
-        {/* ERROR */}
         {!loading && error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-700">
             {error}
           </div>
         )}
 
-        {/* CONTENT */}
         {!loading && !error && (
           <>
-            {/* GRID */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {paginatedData.map((province) => {
                 const cfg =
@@ -209,103 +234,102 @@ export default function ExplorePage() {
                   <div
                     key={province.key}
                     onClick={() => navigate(`/detail-prov/${province.key}`)}
-                    className="bg-white border border-gray-200 rounded-md p-4 shadow-sm hover:shadow-md transition"
+                    className="group bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
                   >
-                    {/* TOP */}
-                    <div className="flex items-start justify-between mb-1 gap-3">
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900 leading-tight">
-                          {province.daerah}
-                        </h3>
-                      </div>
+                    <div className="flex items-start justify-between mb-3 gap-3">
+                      <h3 className="text-xl font-bold text-[#0B1C30] leading-tight">
+                        {province.daerah}
+                      </h3>
 
                       <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded-sm ${cfg.bg} ${cfg.text} flex items-center gap-1`}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}
                       >
                         △ {province.status}
                       </span>
                     </div>
 
-                    {/* BORDER */}
-                    <div className={`border-t-2 ${cfg.border} my-3`} />
+                    <div className={`border-t-2 ${cfg.border} mb-5`} />
 
-                    {/* BUDGET */}
-                    <p className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-1">
+                    <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1">
                       Total Anggaran
                     </p>
 
-                    <p className="text-3xl font-bold text-slate-900 mb-4">
+                    <p className="text-3xl font-bold text-[#0B1C30] mb-5">
                       {province.totalAnggaranFormatted}
                     </p>
 
-                    {/* CATEGORY */}
-                    <div className="space-y-2 mb-4">
+                    <div className="space-y-3 mb-5">
                       {province.categoryBreakdown?.length > 0 ? (
-                        province.categoryBreakdown.map((item) => (
-                          <div
-                            key={item.name}
-                            className="flex items-center justify-between text-sm"
-                          >
-                            <span className="text-gray-600 truncate pr-3">
-                              {item.name}
-                            </span>
+                        province.categoryBreakdown.slice(0, 3).map((item) => {
+                          const color = categoryColor(item.percentage);
 
-                            <span className="font-semibold text-slate-900">
-                              {item.percentage}%
-                            </span>
-                          </div>
-                        ))
+                          return (
+                            <div key={item.name}>
+                              <div className="flex items-center justify-between text-sm mb-1">
+                                <span className="text-slate-600 truncate pr-3">
+                                  {translateCategory(item.name)}
+                                </span>
+
+                                <span className={`font-semibold ${color.text}`}>
+                                  {item.percentage}%
+                                </span>
+                              </div>
+
+                              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${color.bar}`}
+                                  style={{ width: `${item.percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })
                       ) : (
-                        <p className="text-sm text-gray-400">
-                          Belum ada category
+                        <p className="text-sm text-slate-400">
+                          Belum ada kategori
                         </p>
                       )}
                     </div>
 
-                    {/* FOOTER */}
-                    <div className="border-t border-gray-200 pt-3 flex items-center justify-between">
+                    <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
                       <div>
-                        <p className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+                        <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                           Skor Risiko
                         </p>
 
                         <p
-                          className={`text-xs font-bold ${skorColor(
-                            province.skorAnomali,
+                          className={`text-sm font-bold ${skorColor(
+                            province.skorAnomali
                           )}`}
                         >
-                          {province.skorAnomali.toFixed(2)}
+                          {Number(province.skorAnomali || 0).toFixed(2)}
                         </p>
                       </div>
 
-                      <button
-                        onClick={() => navigate(`/detail-prov/${province.key}`)}
-                        className="text-sm text-black font-medium hover:underline"
-                      >
-                        Detail →
-                      </button>
+                      <span className="text-sm text-[#0B1C30] font-semibold group-hover:underline">
+                        Detail
+                      </span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* PAGINATION */}
             {filtered.length > 0 && (
-              <div className="flex items-center justify-between mt-8">
-                <p className="text-sm text-gray-500">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-10">
+                <p className="text-sm text-slate-500">
                   Menampilkan {(currentPage - 1) * itemsPerPage + 1} -{" "}
                   {Math.min(currentPage * itemsPerPage, filtered.length)} dari{" "}
                   {filtered.length} data
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     disabled={currentPage === 1}
                     onClick={() =>
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
                     }
-                    className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white disabled:opacity-40"
+                    className="px-4 py-2 text-sm border border-slate-200 rounded-lg bg-white disabled:opacity-40"
                   >
                     Prev
                   </button>
@@ -316,8 +340,8 @@ export default function ExplorePage() {
                       onClick={() => setCurrentPage(i + 1)}
                       className={`w-9 h-9 rounded-lg text-sm border ${
                         currentPage === i + 1
-                          ? "bg-slate-900 text-white border-slate-900"
-                          : "bg-white border-gray-200 text-gray-700"
+                          ? "bg-[#0B1C30] text-white border-[#0B1C30]"
+                          : "bg-white border-slate-200 text-slate-700"
                       }`}
                     >
                       {i + 1}
@@ -329,7 +353,7 @@ export default function ExplorePage() {
                     onClick={() =>
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
-                    className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white disabled:opacity-40"
+                    className="px-4 py-2 text-sm border border-slate-200 rounded-lg bg-white disabled:opacity-40"
                   >
                     Next
                   </button>
@@ -337,15 +361,16 @@ export default function ExplorePage() {
               </div>
             )}
 
-            {/* EMPTY */}
             {filtered.length === 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-10 text-center text-gray-500 mt-5">
+              <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-500 mt-5">
                 Tidak ada data ditemukan.
               </div>
             )}
           </>
         )}
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }

@@ -1,53 +1,97 @@
-import React from 'react';
-import { Landmark } from 'lucide-react';
+import React from "react";
+import { Landmark } from "lucide-react";
 
 const RegionalBudgetCard = ({ province, skorColor }) => {
-  // Mapping statuses to the specific labels in your screenshot
-  const statusLabels = {
-    kritis: 'HIGH',
-    anomali: 'MODERATE',
-    stabil: 'LOW'
+  const statusConfig = {
+    kritis: {
+      label: "KRITIS",
+      bg: "bg-red-50",
+      text: "text-red-700",
+      border: "border-red-500",
+      dot: "bg-red-500",
+    },
+    anomali: {
+      label: "ANOMALI",
+      bg: "bg-yellow-50",
+      text: "text-yellow-700",
+      border: "border-yellow-500",
+      dot: "bg-yellow-500",
+    },
+    stabil: {
+      label: "STABIL",
+      bg: "bg-green-50",
+      text: "text-green-700",
+      border: "border-green-500",
+      dot: "bg-green-500",
+    },
   };
 
+  const getStatusKey = (value) => {
+    const status = String(value || "").toLowerCase();
+
+    if (status === "kritis" || status === "danger" || status === "high") {
+      return "kritis";
+    }
+
+    if (status === "anomali" || status === "warning" || status === "medium") {
+      return "anomali";
+    }
+
+    return "stabil";
+  };
+
+  const status = statusConfig[getStatusKey(province.status)];
   return (
-    <div className="border border-gray-200 rounded p-5 bg-white hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-8">
+    <div className="group bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <div className="flex items-start justify-between gap-4 mb-5">
         <div>
-          <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-1">
+          <p className="text-[10px] text-slate-400 uppercase tracking-[0.22em] font-bold mb-2">
             Informasi Anggaran
           </p>
-          <h3 className="text-xl font-bold text-slate-800">{province.name}</h3>
+
+          <h3 className="text-xl font-bold text-[#0B1C30] leading-tight">
+            {province.name}
+          </h3>
         </div>
-        {/* Color-coded Landmark icon based on score */}
-        <span className={`${skorColor(province.skor)} opacity-80`}>
-          <Landmark className="w-5 h-5" />
-        </span>
+
+        <div
+          className={`w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center ${skorColor(
+            province.skor
+          )}`}
+        >
+        </div>
       </div>
 
-      <div className="space-y-1.5 border-t border-gray-100 pt-4">
-        <div className="flex justify-between text-[11px]">
-          <span className="text-gray-500">Alokasi Dana:</span>
-          <span className="font-bold text-slate-700">{province.dana}</span>
+      <div className={`border-t-2 ${status.border} mb-5`} />
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">
+            Alokasi Dana
+          </p>
+
+          <p className="text-lg font-bold text-[#0B1C30]">
+            {province.dana}
+          </p>
         </div>
 
-        <div className="flex justify-between text-[11px] items-center">
-          <span className="text-gray-500">Skor Anomali:</span>
-          <div className="flex items-center gap-1.5">
-            <span className={`font-bold ${skorColor(province.skor)}`}>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">
+              Skor Risiko
+            </p>
+
+            <p className={`text-2xl font-bold ${skorColor(province.skor)}`}>
               {province.skor}
-            </span>
-            {/* The Badge logic */}
-            <span 
-              className={`
-                text-[8px] font-black px-1 py-0.5 rounded-sm 
-                ${province.status === 'kritis' ? 'bg-red-100 text-red-700' : 
-                  province.status === 'anomali' ? 'bg-orange-100 text-orange-700' : 
-                  'bg-blue-100 text-blue-700'}
-              `}
-            >
-              {statusLabels[province.status] || province.status.toUpperCase()}
-            </span>
+            </p>
           </div>
+
+          <span
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold ${status.bg} ${status.text}`}
+          >
+            <span className={`w-2 h-2 rounded-full ${status.dot}`} />
+            {status.label}
+          </span>
         </div>
       </div>
     </div>

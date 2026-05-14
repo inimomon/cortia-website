@@ -3,8 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import ReactMarkdown from "react-markdown";
 
-const PORT = import.meta.env.VITE_BE_LINK || "http://localhost:8005/api/v1";
-const API = `${PORT}/audit`;
+const BASE_URL = import.meta.env.VITE_BE_LINK ;
+const API = `${BASE_URL}/audit`;
 
 const formatNumber = (value) => {
   const number = Number(value);
@@ -231,7 +231,7 @@ export default function AuditDetailPage() {
             </p>
 
             <button
-              onClick={() => navigate("/audit")}
+              onClick={() => navigate("/analisa")}
               className="mt-4 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg"
             >
               Back
@@ -259,7 +259,7 @@ export default function AuditDetailPage() {
       <div className="max-w-6xl mx-auto px-6 py-10">
         {/* BACK */}
         <button
-          onClick={() => navigate("/audit")}
+          onClick={() => navigate("/analisa")}
           className="text-sm text-gray-600 hover:text-black mb-5"
         >
           ← Kembali

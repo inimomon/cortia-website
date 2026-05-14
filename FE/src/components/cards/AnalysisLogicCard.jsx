@@ -1,57 +1,107 @@
-import React from 'react';
+import React from "react";
+import {
+  Brain,
+  Building2,
+  Clock3,
+  FileSearch,
+  TrendingDown,
+  Zap,
+} from "lucide-react";
 
-const AnalysisLogicCard = ({ 
-  transactionId = "TX-99021", 
-  status = "CRITICAL ANOMALY",
-  metrics = [],
-  insight = "" 
-}) => {
+const AIIndicatorsPreviewCard = () => {
+  const indicators = [
+    {
+      title: "Deviasi Harga",
+      desc: "Menganalisis selisih antara estimasi awal dan nilai akhir tender.",
+      icon: TrendingDown,
+    },
+    {
+      title: "Kecepatan Tender",
+      desc: "Mendeteksi tender dengan proses yang terlalu cepat atau tidak normal.",
+      icon: Zap,
+    },
+    {
+      title: "Pola Vendor",
+      desc: "Menganalisis vendor yang sering memenangkan proyek serupa.",
+      icon: Building2,
+    },
+    {
+      title: "Risk Score AI",
+      desc: "Skor probabilitas anomali berdasarkan machine learning.",
+      icon: Brain,
+    },
+    {
+      title: "Kategori Pengadaan",
+      desc: "Mengevaluasi tingkat risiko berdasarkan jenis pengadaan proyek.",
+      icon: FileSearch,
+    },
+    {
+      title: "Days To Award",
+      desc: "Mengukur durasi dari publikasi tender hingga penetapan pemenang.",
+      icon: Clock3,
+    },
+  ];
+
   return (
-    <div className="border border-gray-200 rounded-xl p-6 shadow-sm bg-white h-full flex flex-col">
+    <div className="border border-gray-200 rounded-2xl bg-white shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-            Status Analisis
+          <p className="text-[10px] text-gray-400 uppercase tracking-[0.25em] font-bold mb-1">
+            Explainable AI
           </p>
-          <p className="font-bold text-gray-900">Logic Analysis: {transactionId}</p>
+
+          <h2 className="text-2xl font-bold text-slate-900">
+            Indikator yang Digunakan AI
+          </h2>
         </div>
-        <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-1 rounded tracking-tighter italic">
-          {status}
-        </span>
+
+        <div className="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-black tracking-widest">
+          PREVIEW
+        </div>
       </div>
 
-      {/* Metrics List */}
-      <div className="space-y-5 flex-grow">
-        {metrics.map((m) => (
-          <div key={m.label}>
-            <div className="flex justify-between text-[11px] text-gray-500 mb-1.5">
-              <span className="font-medium">{m.label}</span>
-              <span className="font-bold text-gray-800 uppercase">{m.value}</span>
-            </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full ${m.color} transition-all duration-1000`} 
-                style={{ width: m.width }} 
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Body */}
+      <div className="p-6">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {indicators.map((item) => {
+            const Icon = item.icon;
 
-      {/* AI Insight Box */}
-      {insight && (
-        <div className="mt-6 relative">
-          <div className="absolute -top-2 left-3 bg-white px-2 text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
-            AI Insight
-          </div>
-          <p className="text-xs text-gray-600 leading-relaxed italic bg-slate-50 p-4 rounded-lg border border-slate-100">
-            "{insight}"
-          </p>
+            return (
+              <div
+                key={item.title}
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 hover:bg-slate-100 hover:border-slate-300 transition-all duration-300"
+              >
+                <div className="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm mb-4">
+                  <Icon className="w-5 h-5 text-slate-700" />
+                </div>
+
+                <h3 className="text-sm font-bold text-slate-900 mb-2">
+                  {item.title}
+                </h3>
+
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            );
+          })}
         </div>
-      )}
+
+        {/* Footer */}
+        <div className="mt-6 border-t border-gray-100 pt-5">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Model AI melakukan evaluasi multi-indikator berbasis data
+              procurement historis untuk mendeteksi pola anomali, potensi
+              markup, ketidakwajaran tender, dan risiko korupsi secara lebih
+              cepat serta transparan.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default AnalysisLogicCard;
+export default AIIndicatorsPreviewCard;

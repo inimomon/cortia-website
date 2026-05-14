@@ -4,8 +4,9 @@ import Navbar from "../components/ui/Navbar";
 import { File as FileIcon } from "lucide-react";
 import Footer from "../components/ui/Footer";
 import HeroAudit from "../components/ui/HeroAudit";
+import { LogIn, UserPlus} from "lucide-react";
 
-const PORT = import.meta.env.VITE_BE_LINK || "http://localhost:8005/api/v1";
+const PORT = import.meta.env.VITE_BE_LINK;
 const API = `${PORT}/audit`;
 
 const REQUIRED_COLUMNS = [
@@ -89,30 +90,33 @@ function LoginRequiredModal({ open, onLoginClick, onRegisterClick }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center">
-        <div className="text-5xl mb-6">🔒</div>
-
         <h2 className="text-2xl font-bold text-gray-900 mb-3">
-          Fitur Eksklusif
+          Login Dibutuhkan
         </h2>
 
         <p className="text-gray-500 text-sm mb-8 leading-relaxed">
           Anda harus login atau mendaftar untuk menggunakan fitur analisis data
           pengadaan ini.
         </p>
-
         <div className="flex flex-col gap-3">
           <button
             onClick={onLoginClick}
-            className="w-full bg-gray-900 text-white font-medium py-3 rounded-lg hover:bg-gray-700 transition-colors"
+            className="group w-full bg-gray-900 text-white font-medium py-3.5 rounded-xl hover:bg-black transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
-            Masuk ke Akun
+            <LogIn className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+
+            <span>Masuk ke Akun</span>
+
           </button>
 
           <button
             onClick={onRegisterClick}
-            className="w-full bg-teal-600 text-white font-medium py-3 rounded-lg hover:bg-teal-700 transition-colors"
+            className="group w-full bg-white border border-gray-200 text-gray-900 font-medium py-3.5 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5"
           >
-            Daftar Sekarang
+            <UserPlus className="w-4 h-4 transition-transform group-hover:scale-110" />
+
+            <span>Daftar Sekarang</span>
+
           </button>
         </div>
       </div>
@@ -440,7 +444,7 @@ export default function AuditOldPage() {
       fetchAudits();
 
       if (data.auditId) {
-        navigate(`/audit/${data.auditId}`);
+        navigate(`/analisa/${data.auditId}`);
       }
     } catch (error) {
       console.error("UPLOAD ERROR:", error);
@@ -513,7 +517,7 @@ export default function AuditOldPage() {
       fetchAudits();
 
       if (data.auditId) {
-        navigate(`/audit/${data.auditId}`);
+        navigate(`/analisa/${data.auditId}`);
       }
     } catch (error) {
       console.error("MANUAL ERROR:", error);
@@ -1041,7 +1045,7 @@ export default function AuditOldPage() {
                       <td className="px-4 py-3">
                         <button
                           onClick={() =>
-                            navigate(`/audit/${row.transaction_id}`)
+                            navigate(`/analisa/${row.transaction_id}`)
                           }
                           className="text-sm text-teal-700 font-medium hover:text-teal-900 cursor-pointer whitespace-nowrap"
                         >

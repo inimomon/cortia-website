@@ -13,10 +13,10 @@ export default function Navbar() {
   const path = location.pathname;
 
   const navSets = [
-    { label: "Home", to: "/" },
-    { label: "Explore", to: "/explore" },
-    { label: "Feature", to: "/feature" },
-    { label: "Audit", to: "/audit" },
+    { label: "Beranda", to: "/" },
+    { label: "Fitur", to: "/feature" },
+    { label: "Jelajah", to: "/explore" },
+    { label: "Analisa", to: "/analisa" },
     { label: "Dashboard", to: "/dashboard" },
   ];
 

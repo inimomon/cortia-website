@@ -20,6 +20,7 @@ import {
   Building2,
   SearchCheck,
 } from "lucide-react";
+import Footer from "../components/ui/Footer";
 
 const formatCurrency = (value) => {
   const num = Number(value || 0);
@@ -29,11 +30,11 @@ const formatCurrency = (value) => {
   }
 
   if (num >= 1_000_000_000) {
-    return `IDR ${(num / 1_000_000_000).toFixed(1)}B`;
+    return `IDR ${(num / 1_000_000_000).toFixed(1)}M`;
   }
 
   if (num >= 1_000_000) {
-    return `IDR ${(num / 1_000_000).toFixed(1)}M`;
+    return `IDR ${(num / 1_000_000).toFixed(1)}Jt`;
   }
 
   return `IDR ${num}`;
@@ -110,40 +111,40 @@ export default function DashboardPage() {
         setProvinsiData(sorted);
         setSelected(sorted[0] || null);
 
-      setStats([
-        {
-          label: "PROVINSI TERANALISIS",
-          val: mapped.length,
-          icon: <Globe className="w-4 h-4 text-slate-900" />,
-          bgColor: "bg-white",
-          borderColor: "border-slate-200",
-          textColor: "text-slate-950",
-        },
-        {
-          label: "KONDISI KRITIS",
-          val: danger.length,
-          icon: <ShieldAlert className="w-4 h-4 text-red-600" />,
-          bgColor: "bg-red-50",
-          borderColor: "border-red-200",
-          textColor: "text-red-600",
-        },
-        {
-          label: "POTENSI ANOMALI",
-          val: warning.length,
-          icon: <TriangleAlert className="w-4 h-4 text-orange-400" />,
-          bgColor: "bg-orange-50",
-          borderColor: "border-orange-200",
-          textColor: "text-orange-500",
-        },
-        {
-          label: "STABIL",
-          val: safe.length,
-          icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
-          bgColor: "bg-white",
-          borderColor: "border-emerald-200",
-          textColor: "text-emerald-600",
-        },
-      ]);
+        setStats([
+          {
+            label: "PROVINSI TERANALISIS",
+            val: mapped.length,
+            icon: <Globe className="w-4 h-4 text-slate-900" />,
+            bgColor: "bg-white",
+            borderColor: "border-slate-200",
+            textColor: "text-slate-950",
+          },
+          {
+            label: "KONDISI KRITIS",
+            val: danger.length,
+            icon: <ShieldAlert className="w-4 h-4 text-red-600" />,
+            bgColor: "bg-red-50",
+            borderColor: "border-red-200",
+            textColor: "text-red-600",
+          },
+          {
+            label: "POTENSI ANOMALI",
+            val: warning.length,
+            icon: <TriangleAlert className="w-4 h-4 text-orange-400" />,
+            bgColor: "bg-orange-50",
+            borderColor: "border-orange-200",
+            textColor: "text-orange-500",
+          },
+          {
+            label: "STABIL",
+            val: safe.length,
+            icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
+            bgColor: "bg-white",
+            borderColor: "border-emerald-200",
+            textColor: "text-emerald-600",
+          },
+        ]);
         setStatusData([
           {
             id: "danger",
@@ -226,8 +227,8 @@ export default function DashboardPage() {
       <Navbar variant="default" />
 
       <HeroDashboard
-        title="Peta Risiko & Distribusi Anomali"
-        description="Tinjauan tingkat tinggi mengenai distribusi risiko institusional dan deteksi anomali transaksi di seluruh wilayah operasional."
+        title="Dashboard Transparansi "
+        description="Memperkuat kepercayaan masyarakat melalui akses terbuka terhadap analisis anggaran dan pemantauan risiko penyalahgunaan anggaran."
       />
 
       <div className="max-w-7xl mx-auto px-6 py-10">
@@ -269,16 +270,22 @@ export default function DashboardPage() {
         {selected && <ProvinceDetail selected={selected} />}
 
         <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 font-serif">
-              Daftar Anggaran Daerah
-            </h2>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-[#0B1C30]/40 mb-2">
+                Wilayah Berisiko
+              </p>
+
+              <h2 className="text-2xl md:text-3xl font-bold text-[#0B1C30] font-serif">
+                Daftar  Daerah
+              </h2>
+            </div>
 
             <button
               onClick={() => navigate("/explore")}
-              className="text-sm text-teal-600 hover:text-teal-800 font-medium"
+              className="w-fit text-sm font-semibold text-[#0B1C30] hover:underline"
             >
-              View All Budgets
+              Lihat Semua Anggaran
             </button>
           </div>
 
@@ -299,6 +306,8 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
+
+      <Footer />
     </div>
   );
 }

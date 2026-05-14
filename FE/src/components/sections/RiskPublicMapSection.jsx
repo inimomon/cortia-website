@@ -49,9 +49,9 @@ const RiskPublicMapSection = () => {
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-4xl font-bold text-gray-900 mb-2">
-          Pemetaan Potensi Penyalahgunaan Anggaran
+          Peta Potensi Penyalahgunaan Anggaran
         </h2>
-        <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
+        <p className="text-sm text-gray-500 max-w-md leading-relaxed">
           Visualisasi persebaran risiko penyalahgunaan anggaran berdasarkan
           analisis data transaksi dan tender nasional.
         </p>
@@ -144,10 +144,7 @@ const RiskPublicMapSection = () => {
         {/* Footer card */}
         <div className="border-t border-gray-200 bg-white px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-gray-500 font-medium">
-              LIVE · Update 5 menit lalu
-            </span>
+            
           </div>
           <a href="/dashboard" className="bg-gray-900 text-white text-xs font-semibold px-5 py-2 rounded-lg hover:bg-gray-700 transition">
             Buka Dashboard

@@ -11,11 +11,11 @@ const formatCurrency = (value) => {
   }
 
   if (num >= 1_000_000_000) {
-    return `IDR ${(num / 1_000_000_000).toFixed(1)}B`;
+    return `IDR ${(num / 1_000_000_000).toFixed(1)}M`;
   }
 
   if (num >= 1_000_000) {
-    return `IDR ${(num / 1_000_000).toFixed(1)}M`;
+    return `IDR ${(num / 1_000_000).toFixed(1)}Jt`;
   }
 
   return `IDR ${num.toLocaleString("id-ID")}`;
@@ -55,7 +55,7 @@ const ProvinceDetail = ({ selected }) => {
         const daerah = encodeURIComponent(selectedName);
 
         const res = await axios.get(
-          `${import.meta.env.VITE_BE_LINK}/prediction/stats/${daerah}`,
+          `${import.meta.env.VITE_BE_LINK}/prediction/stats/${daerah}`
         );
 
         console.log("DETAIL RESPONSE:", res.data);
@@ -81,9 +81,9 @@ const ProvinceDetail = ({ selected }) => {
   const status = getSelectedStatus(selected, detail);
 
   const statusStyles = {
-    DANGER: "bg-red-100 text-red-700",
-    WARNING: "bg-orange-100 text-orange-700",
-    SAFE: "bg-green-100 text-green-700",
+    KRITIS: "bg-red-100 text-red-700",
+    WASPADA: "bg-orange-100 text-orange-700",
+    AMAN: "bg-green-100 text-green-700",
   };
 
   const totalData = Number(detail?.total_data ?? selected?.totalData ?? 0);
@@ -127,19 +127,19 @@ const ProvinceDetail = ({ selected }) => {
 
   const anomalyTypes = [
     {
-      label: "Danger",
+      label: "Kritis",
       value: danger,
       pct: totalData ? ((danger / totalData) * 100).toFixed(1) : null,
       color: "bg-red-500",
     },
     {
-      label: "Warning",
+      label: "Waspada",
       value: warning,
       pct: totalData ? ((warning / totalData) * 100).toFixed(1) : null,
       color: "bg-orange-400",
     },
     {
-      label: "Safe",
+      label: "Aman",
       value: safe,
       pct: totalData ? ((safe / totalData) * 100).toFixed(1) : null,
       color: "bg-green-500",
@@ -206,6 +206,7 @@ const ProvinceDetail = ({ selected }) => {
                       {b.label} (
                       {b.value ? b.value.toLocaleString("id-ID") : "-"})
                     </span>
+
                     <span>{b.pct ? `${b.pct}%` : "-"}</span>
                   </div>
 

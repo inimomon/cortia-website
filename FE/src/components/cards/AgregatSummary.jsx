@@ -7,7 +7,6 @@ const AggregateSummary = ({ stats }) => {
         Ringkasan Agregat
       </p>
       
-      {/* flex-grow ensures the grid fills the vertical space of the parent flex-row */}
       <div className="grid grid-cols-2 gap-3 flex-grow">
         {stats.map((s) => (
           <div 
