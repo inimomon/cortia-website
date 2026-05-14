@@ -6,6 +6,7 @@ import ChallengeSection from '../sections/ChallengeSection';
 import RiskPublicMapSection from '../sections/RiskPublicMapSection';
 import MissionSection from '../sections/MissionSection';
 import FinalCTA from '../ui/FinalCTA';
+import Footer from '../ui/Footer';
 
 import { Landmark, Eye, Handshake, History, BarChart3, Gavel, AlertOctagon } from 'lucide-react';
 
@@ -68,6 +69,9 @@ export default function HomePage() {
 
       {/* CTA */}
       <FinalCTA />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
