@@ -1,8 +1,8 @@
 // import package
 require("dotenv").config();
 const express = require("express");
-const { connectDB } = require("./src/config/db");
-
+const { connectDB,sequelize } = require("./src/config/db");
+const cors = require("cors");
 // import model
 require("./src/model/Prediction");
 require("./src/model/User");
@@ -15,6 +15,7 @@ const auditRouter = require("./src/router/auditRouter");
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 // use router
@@ -26,8 +27,21 @@ app.get("/", (req, res) => {
   res.json("hello");
 });
 
-connectDB();
+const startServer = async () => {
+  try {
+    await connectDB();
 
-app.listen(process.env.PORT, () => {
-  console.log(`running in http://localhost:${process.env.PORT}`);
-});
+    // create table otomatis
+    await sequelize.sync();
+
+    console.log("Database synced");
+
+    app.listen(process.env.PORT, () => {
+      console.log(`running in http://localhost:${process.env.PORT}`);
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+startServer();
