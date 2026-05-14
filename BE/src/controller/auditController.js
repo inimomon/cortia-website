@@ -218,6 +218,7 @@ function summarisePredictionResults(results) {
   );
 }
 
+//untuk upload file input dari user bukan input kasar
 const uploadFile = (req, res) => {
   upload(req, res, async (err) => {
     if (err instanceof multer.MulterError) return res.status(400).json({ success: false, message: err.message });
@@ -260,7 +261,117 @@ const uploadFile = (req, res) => {
   });
 };
 
+//contoh dummy untuk user (ttemplate contoh dalam xlsx)
+const downloadTemplate = (_req, res) => {
+  const workbook = xlsx.utils.book_new();
+  const sampleData = [
+    {
+      tender_title: 'Jasa Eo Pemilihan Abang Dan None Jakarta Selatan Tahun 2023',
+      tender_minvalue: 1252306428.2,
+      award_value: 1145627700.0,
+      award_date: '2023-04-14',
+      days_to_award: 11,
+      mainprocurementcategory: 'Services',
+      award_title: 'Jasa Eo Pemilihan Abang Dan None Jakarta Selatan Tahun 2023',
+      award_supplier: 'Pt. Ishana Abyakta Indonesia',
+      nama_daerah: 'dki_jakarta_127',
+    },
+    {
+      tender_title: 'Pengadaan Perangkat Jaringan Data Pemerintah Kota',
+      tender_minvalue: 875000000.0,
+      award_value: 842500000.0,
+      award_date: '2023-05-02',
+      days_to_award: 19,
+      mainprocurementcategory: 'Goods',
+      award_title: 'Kontrak Pengadaan Perangkat Jaringan Data Pemerintah Kota',
+      award_supplier: 'PT Nusantara Teknologi Infrastruktur',
+      nama_daerah: 'dki_jakarta_127',
+    },
+  ];
+
+  const worksheet = xlsx.utils.json_to_sheet(sampleData);
+  worksheet['!cols'] = [
+    { wch: 45 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
+    { wch: 24 }, { wch: 45 }, { wch: 30 }, { wch: 18 },
+  ];
+  xlsx.utils.book_append_sheet(workbook, worksheet, 'Template');
+  const buffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+  res.setHeader('Content-Disposition', 'attachment; filename="audit_old_template.xlsx"');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+};
+
+// clean data from user input, panggil fastapi 
+const analyzeAudit = async (req, res) => {
+  const { auditId } = req.body;
+  if (!auditId) return res.status(400).json({ success: false, message: 'auditId is required' });
+
+  try {
+    const audit = await AuditHistory.findByPk(auditId);
+    if (!audit || audit.flow_type !== FLOW_TYPE) {
+      return res.status(404).json({ success: false, message: 'Audit not found' });
+    }
+    if (audit.status === 'processing') {
+      return res.status(409).json({ success: false, message: 'Analysis already in progress' });
+    }
+    if (audit.status === 'completed') {
+      return res.status(409).json({ success: false, message: 'This file has already been analyzed' });
+    }
+
+    await AuditHistory.update({ status: 'processing' }, { where: { id: auditId } });
+
+    const ext = ['.xlsx', '.csv'].find((candidate) =>
+      fs.existsSync(path.join(uploadDir, `audit_old_${auditId}${candidate}`))
+    );
+    if (!ext) {
+      await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } });
+      return res.status(404).json({ success: false, message: 'Uploaded file not found on server' });
+    }
+
+    const rows = parseFile(path.join(uploadDir, `audit_old_${auditId}${ext}`));
+    const validation = validateSchema(rows);
+    if (!validation.valid) {
+      await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } });
+      return res.status(422).json({ success: false, message: validation.message });
+    }
+
+    const namaDaerah = resolveNamaDaerah(rows);
+    const sanitizedRows = sanitizeRows(rows, namaDaerah);
+    const predictionResponse = await requestFastApiPrediction(namaDaerah, sanitizedRows, auditId);
+    if (!Array.isArray(predictionResponse.results)) {
+      throw new Error('FastAPI response does not contain a results array');
+    }
+
+    const summary = summarisePredictionResults(predictionResponse.results);
+
+    await AuditHistory.update(
+      {
+        status: 'completed',
+        total_rows: summary.total_processed,
+        high_risk: summary.high_risk,
+        medium_risk: summary.medium_risk,
+        low_risk: summary.low_risk,
+      },
+      { where: { id: auditId } }
+    );
+
+    return res.json({
+      success: true,
+      status: predictionResponse.status || 'success',
+      total_processed: summary.total_processed,
+      results: predictionResponse.results,
+      summary,
+    });
+  } catch (error) {
+    console.error('Analyze old error:', error);
+    await AuditHistory.update({ status: 'failed' }, { where: { id: auditId } }).catch(() => {});
+    return res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
-    uploadFile
+  uploadFile,
+  downloadTemplate,
+  analyzeAudit,
 };
