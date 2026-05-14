@@ -7,11 +7,13 @@ const cors = require("cors");
 require("./src/model/Prediction");
 require("./src/model/User");
 require("./src/model/AuditHistory");
+require("./src/model/Riskmap");
 
 // import router
 const predictionRouter = require("../BE/src/router/predictionRouter");
 const authRouter = require("./src/router/authRouter");
 const auditRouter = require("./src/router/auditRouter");
+const riskMapRouter = require("./src/router/riskMapRouter");
 
 const app = express();
 
@@ -21,7 +23,8 @@ app.use(express.json());
 // use router
 app.use("/api/v1/prediction", predictionRouter);
 app.use("/api/v1/auth", authRouter);
-app.use("/api/audit", auditRouter);
+app.use("/api/v1/audit", auditRouter);
+app.use("/api/v1/riskMap", riskMapRouter);
 
 app.get("/", (req, res) => {
   res.json("hello");
@@ -30,8 +33,6 @@ app.get("/", (req, res) => {
 const startServer = async () => {
   try {
     await connectDB();
-
-    // create table otomatis
     await sequelize.sync();
 
     console.log("Database synced");
